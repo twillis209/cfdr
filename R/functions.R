@@ -21,6 +21,9 @@
 #library(MASS)
 #library(fields)
 
+library(optimParallel)
+library(Rcpp)
+
 ###########################################################################
 ## Functions ##############################################################
 ###########################################################################
@@ -275,7 +278,6 @@ vl=function(p,q,adj=TRUE,indices=NULL,at=NULL,mode=0,fold=NULL,nt=5000, nv=1000,
   return(list(x=X,y=Y))  
   
 }
-
 
 
 
@@ -1045,7 +1047,7 @@ il=function(X,Y=NULL,pi0_null=NULL,sigma_null=rep(1,length(pi0_null)),rho_null=0
 
 
 
-##' Fit a specific two Guassian mixture distribution to a set of P or Z values.
+##' Fit a specific two Gaussian mixture distribution to a set of P or Z values.
 ##'
 ##' Assumes 
 ##' Z ~ N(0,1) with probability pi0, Z ~ N(0,sigma^2) with probability 1-pi0
@@ -1114,6 +1116,73 @@ fit.2g=function(P, pars = c(0.5, 1.5), weights = rep(1, min(length(Z),dim(Z)[1])
   return(yy)
 }
 
+##' Fit a specific two Gaussian mixture distribution to a set of P or Z values using a parallel implementation of optim
+##'
+##' Assumes 
+##' Z ~ N(0,1) with probability pi0, Z ~ N(0,sigma^2) with probability 1-pi0
+##'
+##' Returns MLE for pi0 and sigma. Uses R's optim function. Can weight observations.
+##' 
+##' @title fit.2g.parallel
+##' @param P numeric vector of observed data, either p-values or z-scores. If rho=0, should be one-dimensional vector; if rho is set, should be bivariate observations (P,Q)
+##' @param pars initial values for parameters
+##' @param weights optional weights for parameters
+##' @param sigma_range range of possible values for sigma (closed interval). Default [1,100]
+##' @param ncores number of cores on which to run parallel optimisation procedure
+##' @return a list containing parameters pars, likelihoods under h1 (Z distributed as above), likelihood under h0 (Z~N(0,1)) and likelihood ratio lr.
+##' @export
+##' @author James Liley
+fit.2g.parallel=function(P, pars = c(0.5, 1.5), weights = rep(1, min(length(Z),dim(Z)[1])), 
+  sigma_range = c(1,100),rho=0,ncores=1,...) {
+  if (all(P<=1) & all(P>= 0)) Z=-qnorm(P/2) else Z=P # P-values or Z scores
+  
+  pars = as.numeric(pars)
+  #Z = as.numeric(Z)
+  if (length(pars) != 2) 
+    stop("Parameter 'pars' must be a two-element vector containing values pi0, s")
+  if (pars[1] >= 1 | pars[1] <= 0 | pars[2] <= sigma_range[1]) 
+    stop("Initial value of pi0 must all be between 0 and 1 and initial value of s must be greater than 0 (or sigma_range[1] if set)")
+  if (abs(rho)< 0.001) {
+    if (length(dim(Z))>1) Z=Z[,2]
+    w = which(!is.na(Z * weights))
+    Z = Z[w]
+    weights = weights[w]
+    w1=which(abs(Z)<30); w2=setdiff(1:length(Z),w1)
+    l2 = function(pars = c(0.5, 1.5)) -(sum(weights[w1] * log(pars[1] * 
+        dnorm(Z[w1], sd = 1) + (1 - pars[1]) * dnorm(Z[w1], sd = pars[2])))) +
+      -(sum(weights[w2] * (log(1 - pars[1]) + dnorm(Z[w2], sd = pars[2],log=T)))) 
+  } else {
+    w1=which(abs(Z[,2])<30); w2=setdiff(1:dim(Z)[1],w1)
+    w = which(!is.na(Z[,1]*Z[,2] * weights))
+    Z = Z[w,]
+    weights = weights[w]
+    l2=function(pars = c(0.5, 1.5)) {
+      v1=rbind(c(1,rho),c(rho,1))
+      v1r=rbind(c(1,-rho),c(-rho,1))
+      v2=rbind(c(1,rho),c(rho,pars[2]^2))
+      v2r=rbind(c(1,-rho),c(-rho,pars[2]^2))
+      pi0=pars[1]
+      fw1= pi0*dmnorm(Z[w1,],varcov=v1) + (1-pi0)*dmnorm(Z[w1,],varcov=v2) 
+      fw2= sum(weights[w2]*(log(1-pi0) + dmnorm(Z[w2,],varcov=v2,log=T) ))
+      fw1r= pi0*dmnorm(Z[w1,],varcov=v1r) + (1-pi0)*dmnorm(Z[w1,],varcov=v2r)  
+      fw2r= sum(weights[w2]*(log(1-pi0) + dmnorm(Z[w2,],varcov=v2r,log=T) ))
+      -sum(weights[w1]*log(fw1+fw1r)) - (fw2+ fw2r)
+    }
+  }
+
+  cl<-makeCluster(ncores, type="FORK")
+  setDefaultCluster(cl=cl)
+  zx = optimParallel(pars, function(p) l2(p), lower = c(1e-05, sigma_range[1]), 
+    upper = c(1 - (1e-05), sigma_range[2]), method = "L-BFGS-B", control = list(factr = 10), 
+    ...)
+  setDefaultCluster(cl=NULL)
+  stopCluster(cl)
+  h1 = -zx$value
+  h0 = -l2()
+  yy = list(pars = zx$par, h1value = h1, h0value = h0, lr = h1 - 
+      h0)
+  return(yy)
+}
 
 
 
