@@ -8,9 +8,10 @@ using namespace Rcpp;
 // vl(p,q, indices=ind[[i]], fold=folds[[i]])
 // TODO mode argument hasn't been dealt with
 // TODO const declarations for arguments
-// TODO type of at 
+// TODO noNA optimisation
+// TODO all subsetting with 1-based vectors!
 // [[Rcpp::export]]
-List vl_mode2(const NumericVector& p, const NumericVector& q, const NumericVector& indices, const NumericVector& fold, bool adj = TRUE, const NumericVector& at = R_NilValue, int nt = 5000, int nv = 1000, double p_threshold = 0, CharacterVector scale = CharacterVector({"p", "z"}), bool closed = TRUE, bool verbose = FALSE, double gx=10^-5) {
+List vl_mode2(const NumericVector& p, const NumericVector& q, const IntegerVector& indices, const IntegerVector& fold, bool adj = TRUE, const NumericVector& at = R_NilValue, int nt = 5000, int nv = 1000, double p_threshold = 0, CharacterVector scale = CharacterVector({"p", "z"}), bool closed = TRUE, bool verbose = FALSE, double gx=10^-5) {
 
   NumericVector zp = qnorm(p/2);
   NumericVector zq = -1.0*qnorm(q/2);
@@ -24,34 +25,53 @@ List vl_mode2(const NumericVector& p, const NumericVector& q, const NumericVecto
   double my = max(NumericVector::create(10.0, max(abs(-qnorm(q/2)))));
 
   //gx=0 //1/1000  // use for 'tiebreaks'- if a point is on a curve with nonzero area, force the L-curve through that point
+
+  NumericVector ccut;
   
   if (indices==R_NilValue) {
     if (at==R_NilValue) {
       stop("One of the parameters 'indices', 'at' must be set");
     }
-    NumericVector ccut=at;
+    ccut=at;
     int mode=0;
   } else {
     // Note that the vector constructor is mimicking rep(0, length(indices))
-    NumericVector ccut(indices.size());
+    ccut = NumericVector(indices.size());
   }
 
   
   // yval2=seq(from=0,to=my,length.out=nv+1)[1:nv];
   NumericVector yval2(nv+1);
 
-  for(int i = 0; i < (nv+1); i++) {
-    yval2[i] = my * (i/nv); 
+  for(int i = 0; i < yval2.size(); i++) {
+    yval2[i] = my * (i/(yval2.size()-1)); 
   }
   
   yval2 = yval2[Range(0,nv-1)];
 
-  /* 
-  xval2=outer(rep(1,length(ccut)),yval2);
-  pval2=2*pnorm(-yval2);
-  xtest=seq(0,mx,length.out=nt);
-  ptest=2*pnorm(-xtest);
-  
+  // xval2=outer(rep(1,length(ccut)),yval2);
+  NumericMatrix xval2(ccut.size(), yval2.size());
+
+  for(int i = 0; i < ccut.size(); i++) {
+    for(int j = 0; j < yval2.size(); j++) {
+      xval2(i, j) = 1.0 * yval2[j]; 
+    }
+  }
+
+  // pval2=2*pnorm(-yval2);
+  NumericVector pval2 = 2*pnorm(-yval2);
+
+  // xtest=seq(0,mx,length.out=nt);
+  NumericVector xtest(nt);
+
+  for(int i = 0; i < xtest.size(); i++) {
+    xtest[i] = mx * (i/(xtest.size()-1)); 
+  }
+
+  // ptest=2*pnorm(-xtest);
+  NumericVector ptest=2*pnorm(-xtest);
+
+  /*
   if (!is.null(indices)) { // set ccut. NOT equal to cfdr at the points; needs to be adjusted since an additional test point is used in determination of L
       ccut=rep(0,length(indices))
       for (i in 1:length(indices)) {
@@ -63,8 +83,53 @@ List vl_mode2(const NumericVector& p, const NumericVector& q, const NumericVecto
       }
       //    ccut= p[indices]*sapply(indices,function(x) 
       //      (1+length(which(q[-fold] <= q[x])))/(1+length(which(p[-fold] <= p[x] & q[-fold] <= q[x]))))// set ccut
-  }  
-  
+  }
+  */
+
+  if(indices != R_NilValue) {
+
+    ccut = NumericVector(indices.size());
+
+    for(int i = 0; i < indices.size(); i++){
+      // TODO slow not to preallocate the vector w here, but we don't know ahead of time; surely it would *not* be quicker to calculate the indices first?
+
+      // The following code simulates the R code below
+      //      w=which(zq[-fold] >= zq[indices[i]])
+
+      // warning: fold is a 1-based indexing mask and we are computing a 0-based mask
+      LogicalVector negFoldMask(zq.size(), true);
+
+      for(int j = 0; j < fold.size(); j++) {
+        negFoldMask[(fold[j]-1)]=false;
+      }
+
+      NumericVector zq_negFold = zq[negFoldMask];
+      NumericVector zq_indices = zq[(indices[i]-1)];
+
+      // 0-based mask
+      IntegerVector w;
+
+      // would this be faster vectorised? 
+      for(int j = 0; j < fold.size(); j++) {
+        if(zq_negFold[j] >= zq_indices[j]) {
+          w.push_back(j);
+        }
+      }
+
+      if(w.size() >=1 ) {
+        NumericVector cfsub = (1+(1.0/w.size()))*ptest/(1+(1/w.size())-ecdf(zp[negFoldMask][w])(xtest));
+        //    cfsub= (1+(1/length(w)))*ptest/(1+(1/length(w))-ecdf(zp[-fold][w])(xtest));
+        // cfsub=cummin(cfsub);
+        // ccut[i]=approx(xtest,cfsub-gx*xtest + gx*mx,zp[indices[i]],rule=2)$y
+      } else {
+        ccut[i] = p[(indices[i]-1)];
+      }
+
+    }
+    
+  }
+
+  /*
   ccut=ccut*(1+ 1e-6) // ccut + 1e-8 // prevent floating-point comparison errors
   
   out=rep(0,length(ccut))
