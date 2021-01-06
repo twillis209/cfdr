@@ -3,48 +3,6 @@
 
 using namespace Rcpp;
 
-// From https://github.com/dmbates/ecdfExample
-
-/*
- TODO The implementation from dmbates which I've copied below requires that we have the order of the elements in sample when they are sorted. I'm not yet sure how to get this in Rcpp, although we could write a function to get it. What about duplicates in sample, though? Should include that in the test case
-*/
-
-// [[Rcpp::export]]
-NumericVector ecdf_cpp(NumericVector reference, NumericVector sample) {
-  NumericVector sortedRef = clone(reference);
-  NumericVector sortedSample = clone(sample);
-
-  std::sort(sortedRef.begin(), sortedRef.end());
-  std::sort(sortedSample.begin(), sortedSample.end());
-
-  IntegerVector ord = match(sortedSample, sample);
-
-  NumericVector estimatedQuantiles(sample.size());
-
-  for(int i = 0, j = 0; i < sortedSample.size(); ++i) {
-    while(sortedRef[j] <= sortedSample[i] && j < sortedRef.size()) ++j;
-    estimatedQuantiles[ord[i]] = (j+1)/((double) reference.size());
-  }
-
-  return estimatedQuantiles;
-}
-
-/*
-
-//[[Rcpp::export]]
-IntegerVector cppcp(NumericVector samp, NumericVector ref, IntegerVector ord) {
-  int nobs = samp.size();
-  IntegerVector ans(nobs);
-  for (int i = 0, j = 0; i < nobs; ++i) {
-    int ind(ord[i] - 1); // C++ uses 0-based indices
-    double ssampi(samp[ind]);
-    while (ref[j] < ssampi && j < ref.size()) ++j;
-    ans[ind] = j;     // j is the 1-based index of the lower bound
-  }
-  return ans;
-}
-
-*/
 
 // TODO maybe we should correct the 1-indexed vectors at the outset
 // [[Rcpp::export]]

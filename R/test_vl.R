@@ -1,6 +1,7 @@
 library(testthat)
 library(cfdr)
 library(Rcpp)
+library(microbenchmark)
 
 sourceCpp('vl.cpp')
                                         # The idea here is to repeat the analysis from the vignette but cache the result of the call to vl so that we have something against which to validate the behaviour of the Rcpp implementation of this function
@@ -8,14 +9,8 @@ sourceCpp('vl.cpp')
 # Contains objects v1, v2, and v3
 load('vl_testData.RData')
 
-                                        # Not sure how we should load this code
-test_that("Test ecdf_cpp on some trivial cases", {
-  testSample<-seq(0.1, 1.0, length.out=10)
-  expect_equal(ecdf_cpp(testSample, testSample), testSample)
-})
-
-
 set.seed(1)
+
 n=10000; n1p=100; n1pq=100; n1q=100
 
 zp=c(rnorm(n1p,sd=3), rnorm(n1q,sd=1),
