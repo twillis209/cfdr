@@ -3,6 +3,86 @@
 
 using namespace Rcpp;
 
+/*
+
+  I first got the idea of this implementation from a comment on a Reddit post. That code used `std::lower_bound`, which seemed not to work. I found the implementation in the following link when trying to fix this problem and switched to using `std::upper_bound` after viewing it (https://github.com/stepcie/sslcov/blob/master/src/ecdf.cpp). 
+
+*/
+
+// [[Rcpp::export]]
+NumericVector ecdf_cpp(NumericVector reference, NumericVector sample) {
+  NumericVector sortedRef = clone(reference);
+
+  std::sort(sortedRef.begin(), sortedRef.end());
+
+  NumericVector estimatedQuantiles(sample.size());
+
+  for(int i = 0; i < sample.size(); ++i) {
+    estimatedQuantiles[i] = (std::upper_bound(sortedRef.begin(), sortedRef.end(), sample[i])-sortedRef.begin());
+  }
+
+  return estimatedQuantiles/((double) sortedRef.size());
+}
+
+/*
+        ccut[i]=approx(xtest,cfsub-gx*xtest + gx*mx,zp[indices[i]],rule=2)$y
+
+ TODO other rules; for now, we just have hard-coded a default of rule=2
+
+ TODO just returning interpolated function values for now
+
+ TODO if we knew there were no duplicates, we could speed things up by sorting xout, retaining the order, interpolating, then sorting the interpolated values back into the original order of xout
+
+ TODO edge cases where xout lies outside extrema or xout is equal to an element of x
+
+ Linear interpolation is performed with f(x)=f(x0)+[(f(x1)-f(x0))/(x1-x0)]*(x-x0)
+
+ xtest is monotonic
+
+ cfsub-gx*xtest + gx*mx 
+
+ zp[indices[i]] is quantiles of a vector of p-values and not sorted
+
+ rule=2 means that if an xout value falls outside [min(xtest), max(xtest)], then we use the closest of these two extrema
+*/
+
+// [[Rcpp::export]]
+NumericVector approx_cpp(NumericVector x, NumericVector y, NumericVector xout) {
+  NumericVector yout(xout.size());
+
+
+  double x1_index, x1, x0, y1, y0;
+
+  // For our purposes, x is strictly increasing
+  for(int i = 0; i < xout.size(); i++) {
+    // std::lower_bound finds the smallest element *not less than* xout[i]
+    auto upper = std::lower_bound(x.begin(), x.end(), xout[i]);
+
+    // TODO This can be optimised as well
+    if(upper == x.begin()) {
+      yout[i] = y[0];
+      continue;
+    } else if(upper == x.end()) {
+      yout[i] = y[y.size()-1];
+      continue;
+    }
+
+    // TODO not using this at the moment
+    // Gets lower bound x0 (don't confuse this lower bound with the function lower_bound, which returns a value *not less than* xout[i])
+    //auto lower = std::max_element(x.begin(), upper);
+
+    x1_index = std::distance(x.begin(), upper);
+    x1 = *upper;
+    x0 = x[x1_index-1];
+    y1 = y[x1_index];
+    y0 = y[x1_index-1];
+
+    yout[i] = y0+((y1-y0)/(x1-x0))*(xout[i]-x0);
+  }
+ 
+  return yout;
+
+}
 
 // TODO maybe we should correct the 1-indexed vectors at the outset
 // [[Rcpp::export]]
@@ -83,7 +163,7 @@ void vl_mode2(NumericVector p, NumericVector q, IntegerVector indices, IntegerVe
       //      (1+length(which(q[-fold] <= q[x])))/(1+length(which(p[-fold] <= p[x] & q[-fold] <= q[x]))))// set ccut
   }
   */
-
+  /*
   if(indices != R_NilValue) {
 
     ccut = NumericVector(indices.size());
@@ -118,14 +198,16 @@ void vl_mode2(NumericVector p, NumericVector q, IntegerVector indices, IntegerVe
         // TODO incomplete line, needs to be finished to match the R line below
         NumericVector cfsub = (1+(1.0/w.size()))*ptest/(1+(1/w.size()))-ecdf_cpp(zp_negFold[w], xtest);
 
-        //    cfsub= (1+(1/length(w)))*ptest/(1+(1/length(w))-ecdf(zp[-fold][w])(xtest));
-        // cfsub=cummin(cfsub);
-        // ccut[i]=approx(xtest,cfsub-gx*xtest + gx*mx,zp[indices[i]],rule=2)$y
+        cfsub=cummin(cfsub);
+        //TODO replace the next line
+        // TODO can we multiply, subtract vectors like this?
+        //        ccut[i]=approx(xtest,cfsub-gx*xtest + gx*mx,zp[indices[i]],rule=2)$y
       } else {
         ccut[i] = p[(indices[i]-1)];
       }
     }
   }
+  */
 
   /*
   ccut=ccut*(1+ 1e-6) // ccut + 1e-8 // prevent floating-point comparison errors
@@ -183,3 +265,4 @@ void vl_mode2(NumericVector p, NumericVector q, IntegerVector indices, IntegerVe
 // TODO const declarations for arguments
 // TODO noNA optimisation
 // TODO all subsetting with 1-based vectors!
+
