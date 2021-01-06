@@ -1,17 +1,55 @@
 #include <Rcpp.h>
 #include <Rmath.h>
+
 using namespace Rcpp;
 
-// TODO internal interpolation function, not used in mode 2
-//double interpol()
+// From https://github.com/dmbates/ecdfExample
 
-// vl(p,q, indices=ind[[i]], fold=folds[[i]])
-// TODO mode argument hasn't been dealt with
-// TODO const declarations for arguments
-// TODO noNA optimisation
-// TODO all subsetting with 1-based vectors!
+/*
+ TODO The implementation from dmbates which I've copied below requires that we have the order of the elements in sample when they are sorted. I'm not yet sure how to get this in Rcpp, although we could write a function to get it. What about duplicates in sample, though? Should include that in the test case
+*/
+
 // [[Rcpp::export]]
-List vl_mode2(const NumericVector& p, const NumericVector& q, const IntegerVector& indices, const IntegerVector& fold, bool adj = TRUE, const NumericVector& at = R_NilValue, int nt = 5000, int nv = 1000, double p_threshold = 0, CharacterVector scale = CharacterVector({"p", "z"}), bool closed = TRUE, bool verbose = FALSE, double gx=10^-5) {
+NumericVector ecdf_cpp(NumericVector reference, NumericVector sample) {
+  NumericVector sortedRef = clone(reference);
+  NumericVector sortedSample = clone(sample);
+
+  std::sort(sortedRef.begin(), sortedRef.end());
+  std::sort(sortedSample.begin(), sortedSample.end());
+
+  IntegerVector ord = match(sortedSample, sample);
+
+  NumericVector estimatedQuantiles(sample.size());
+
+  for(int i = 0, j = 0; i < sortedSample.size(); ++i) {
+    while(sortedRef[j] <= sortedSample[i] && j < sortedRef.size()) ++j;
+    estimatedQuantiles[ord[i]] = (j+1)/((double) reference.size());
+  }
+
+  return estimatedQuantiles;
+}
+
+/*
+
+//[[Rcpp::export]]
+IntegerVector cppcp(NumericVector samp, NumericVector ref, IntegerVector ord) {
+  int nobs = samp.size();
+  IntegerVector ans(nobs);
+  for (int i = 0, j = 0; i < nobs; ++i) {
+    int ind(ord[i] - 1); // C++ uses 0-based indices
+    double ssampi(samp[ind]);
+    while (ref[j] < ssampi && j < ref.size()) ++j;
+    ans[ind] = j;     // j is the 1-based index of the lower bound
+  }
+  return ans;
+}
+
+*/
+
+// TODO maybe we should correct the 1-indexed vectors at the outset
+// [[Rcpp::export]]
+void vl_mode2(NumericVector p, NumericVector q, IntegerVector indices, IntegerVector fold, bool adj, NumericVector at, int nt, int nv, double p_threshold, CharacterVector scale, bool closed, bool verbose, double gx) {
+//void vl_mode2(const NumericVector& p, const NumericVector& q, const IntegerVector& indices, const IntegerVector& fold, bool adj = TRUE, const NumericVector& at = R_NilValue, int nt = 5000, int nv = 1000, double p_threshold = 0, CharacterVector scale = CharacterVector({"p", "z"}), bool closed = TRUE, bool verbose = FALSE, double gx=10^-5) {
 
   NumericVector zp = qnorm(p/2);
   NumericVector zq = -1.0*qnorm(q/2);
@@ -71,6 +109,8 @@ List vl_mode2(const NumericVector& p, const NumericVector& q, const IntegerVecto
   // ptest=2*pnorm(-xtest);
   NumericVector ptest=2*pnorm(-xtest);
 
+  // Omitting the mode 0 and 1 blocks from this section of code
+
   /*
   if (!is.null(indices)) { // set ccut. NOT equal to cfdr at the points; needs to be adjusted since an additional test point is used in determination of L
       ccut=rep(0,length(indices))
@@ -103,13 +143,13 @@ List vl_mode2(const NumericVector& p, const NumericVector& q, const IntegerVecto
         negFoldMask[(fold[j]-1)]=false;
       }
 
+      NumericVector zp_negFold = zp[negFoldMask];
       NumericVector zq_negFold = zq[negFoldMask];
       NumericVector zq_indices = zq[(indices[i]-1)];
 
       // 0-based mask
       IntegerVector w;
 
-      // would this be faster vectorised? 
       for(int j = 0; j < fold.size(); j++) {
         if(zq_negFold[j] >= zq_indices[j]) {
           w.push_back(j);
@@ -117,16 +157,16 @@ List vl_mode2(const NumericVector& p, const NumericVector& q, const IntegerVecto
       }
 
       if(w.size() >=1 ) {
-        NumericVector cfsub = (1+(1.0/w.size()))*ptest/(1+(1/w.size())-ecdf(zp[negFoldMask][w])(xtest));
+        // TODO incomplete line, needs to be finished to match the R line below
+        NumericVector cfsub = (1+(1.0/w.size()))*ptest/(1+(1/w.size()))-ecdf_cpp(zp_negFold[w], xtest);
+
         //    cfsub= (1+(1/length(w)))*ptest/(1+(1/length(w))-ecdf(zp[-fold][w])(xtest));
         // cfsub=cummin(cfsub);
         // ccut[i]=approx(xtest,cfsub-gx*xtest + gx*mx,zp[indices[i]],rule=2)$y
       } else {
         ccut[i] = p[(indices[i]-1)];
       }
-
     }
-    
   }
 
   /*
@@ -172,7 +212,16 @@ List vl_mode2(const NumericVector& p, const NumericVector& q, const IntegerVecto
   
   return(list(x=X,y=Y))  
 */
-  List out(2);
+  //  List out(2);
 
-  return out;
+  //  return out;
 }
+
+// TODO internal interpolation function, not used in mode 2
+//double interpol()
+
+// vl(p,q, indices=ind[[i]], fold=folds[[i]])
+// TODO mode argument hasn't been dealt with
+// TODO const declarations for arguments
+// TODO noNA optimisation
+// TODO all subsetting with 1-based vectors!

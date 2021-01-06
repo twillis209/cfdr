@@ -1,7 +1,7 @@
 #include <Rcpp.h>
 #include <Rmath.h>
 using namespace Rcpp;
-
+ 
 // [[Rcpp::export]]
 void test() { 
   //NumericVector normSam = rnorm(1e4);
