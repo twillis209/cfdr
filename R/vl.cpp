@@ -8,7 +8,6 @@ using namespace Rcpp;
   I first got the idea of this implementation from a comment on a Reddit post. That code used `std::lower_bound`, which seemed not to work. I found the implementation in the following link when trying to fix this problem and switched to using `std::upper_bound` after viewing it (https://github.com/stepcie/sslcov/blob/master/src/ecdf.cpp). 
 
 */
-
 // [[Rcpp::export]]
 NumericVector ecdf_cpp(NumericVector reference, NumericVector sample) {
   NumericVector sortedRef = clone(reference);
@@ -82,42 +81,27 @@ NumericVector approx_cpp(NumericVector x, NumericVector y, NumericVector xout) {
 
 }
 
-// TODO maybe we should correct the 1-indexed vectors at the outset
+// TODO number w vectors and see if it makes a difference
 
 // [[Rcpp::export]]
-List vl_mode2(NumericVector p, NumericVector q, IntegerVector indices, IntegerVector fold, bool adj=true, int nt=5000, int nv=1000, double p_threshold=0, CharacterVector scale=CharacterVector::create("p", "z"), bool closed=true, bool verbose=false, double gx=10e-5, Nullable<NumericVector> at=R_NilValue) {
-//void vl_mode2(const NumericVector& p, const NumericVector& q, const IntegerVector& indices, const IntegerVector& fold, bool adj = TRUE, const NumericVector& at = R_NilValue, int nt = 5000, int nv = 1000, double p_threshold = 0, CharacterVector scale = CharacterVector({"p", "z"}), bool closed = TRUE, bool verbose = FALSE, double gx=10^-5) {
-
+List vl_mode2(NumericVector p, NumericVector q, IntegerVector indices, IntegerVector fold,  bool adj=true, Nullable<NumericVector> at=R_NilValue, int nt=5000, int nv=1000, double p_threshold=0, CharacterVector scale=CharacterVector::create("p", "z"), bool closed=true, bool verbose=false, double gx=0.00001) {
 
   NumericVector zp = qnorm(p/2);
-  NumericVector zq = -1.0*qnorm(q/2);
 
+  NumericVector zq = -1.0*qnorm(q/2);
 
   if (any(!is_finite(zp+zq))) {
     stop("P-values p,q must be in [1e-300,1]");
   }
 
-
   // maximum limits for integration
   double mx = max(NumericVector::create(10.0, max(abs(-qnorm(p/2)))));
   double my = max(NumericVector::create(10.0, max(abs(-qnorm(q/2)))));
 
-
-  //gx=0 //1/1000  // use for 'tiebreaks'- if a point is on a curve with nonzero area, force the L-curve through that point
-
-  NumericVector ccut;
+  //Rprintf("mx: %.5f my: %.5f\n", mx, my);
   
-  if (indices==R_NilValue) {
-    if (at==R_NilValue) {
-      stop("One of the parameters 'indices', 'at' must be set");
-    }
-    ccut=at;
-    int mode=0;
-  } else {
     // Note that the vector constructor is mimicking rep(0, length(indices))
-    ccut = NumericVector(indices.size());
-  }
-
+  NumericVector ccut = NumericVector(indices.size(),0.0);
   
   // yval2=seq(from=0,to=my,length.out=nv+1)[1:nv];
   NumericVector yval2(nv+1);
@@ -141,16 +125,16 @@ List vl_mode2(NumericVector p, NumericVector q, IntegerVector indices, IntegerVe
   NumericVector pval2 = 2*pnorm(-yval2);
 
   // xtest=seq(0,mx,length.out=nt);
-  NumericVector xtest(nt);
+  NumericVector xtest(nt,0.0);
 
-  for(int i = 0; i < xtest.size(); i++) {
-    xtest[i] = mx * (i/(xtest.size()-1)); 
+  // nt == xtest.size()
+  for(int i = 0; i < nt; i++) {
+    xtest[i] = mx * (i/(nt-1)); 
   }
 
+  // // Rcout << "test" << std::endl;
   // ptest=2*pnorm(-xtest);
   NumericVector ptest=2*pnorm(-xtest);
-
-  // Omitting the mode 0 and 1 blocks from this section of code
 
   // warning: fold is a 1-based indexing mask and we are computing a 0-based mask
   LogicalVector negFoldMask(zq.size(), true);
@@ -159,50 +143,62 @@ List vl_mode2(NumericVector p, NumericVector q, IntegerVector indices, IntegerVe
     negFoldMask[(fold[j]-1)]=false;
   }
 
-  NumericVector zp_negFold, zq_negFold, zq_indices;
+  NumericVector zp_negFold, zq_negFold;
+  double zp_index, zq_index;
 
-  if(indices != R_NilValue) {
+  // // Rcout << "test2" << std::endl;
 
-    ccut = NumericVector(indices.size());
+  for(int i = 0; i < indices.size(); i++){
+    // The following code simulates the R code below
+    //      w=which(zq[-fold] >= zq[indices[i]])
 
-    for(int i = 0; i < indices.size(); i++){
-      // TODO slow not to preallocate the vector w here, but we don't know ahead of time; surely it would *not* be quicker to calculate the indices first?
+    zp_negFold = zp[negFoldMask];
+    zq_negFold = zq[negFoldMask];
+    zp_index = zp[(indices[i]-1)];
+    zq_index = zq[(indices[i]-1)];
 
-      // The following code simulates the R code below
-      //      w=which(zq[-fold] >= zq[indices[i]])
+    //Rprintf("zp_negFold.size(): %d zq_negFold.size(): %d\n", zp_negFold.size(), zq_negFold.size());
 
+    // // Rcout << "test3a" << std::endl;
+    // 0-based mask
 
-      zp_negFold = zp[negFoldMask];
-      zq_negFold = zq[negFoldMask];
-      zq_indices = zq[(indices[i]-1)];
+    LogicalVector zq_negFold_w_bool = zq_negFold >= zq_index;
+    NumericVector zp_negFold_w = zp_negFold[zq_negFold_w_bool];
+    int w_size =  zp_negFold_w.size();
 
-      // 0-based mask
-      IntegerVector w;
+    //Rprintf("w_size: %d \n", w_size);
 
-      for(int j = 0; j < fold.size(); j++) {
-        if(zq_negFold[j] >= zq_indices[j]) {
-          w.push_back(j);
-        }
-      }
+    // // Rcout << "test3b" << std::endl;
+    if(w_size >=1 ) {
+      // TODO incomplete line, needs to be finished to match the R line below
+      NumericVector cfsub = (1+(1.0/w_size))*ptest/(1+(1/w_size))-ecdf_cpp(zp_negFold_w, xtest);
 
-      if(w.size() >=1 ) {
-        // TODO incomplete line, needs to be finished to match the R line below
-        NumericVector cfsub = (1+(1.0/w.size()))*ptest/(1+(1/w.size()))-ecdf_cpp(zp_negFold[w], xtest);
+      // // Rcout << "test3c" << std::endl;
+      cfsub=NumericVector(cummin(cfsub));
 
-        // Compiler does not like the following line and error message is completely opaque to me, so I resort to a more verbose construction
-        //cfsub=cummin(cfsub);
+      NumericVector y_in = cfsub-gx*xtest + gx*mx;
 
-        NumericVector cummin_cfsub=cummin(cfsub);
+      // // Rcout << "y_in.size(): " << y_in.size() << std::endl;
 
-        // approx_cpp returns a singleton vector here as zp[(indices[i]-1)] is a scalar
-        ccut[i]=approx_cpp(xtest,cummin_cfsub-gx*xtest + gx*mx,zp[(indices[i]-1)])[0];
-      } else {
-        ccut[i] = p[(indices[i]-1)];
-      }
+      // // Rcout << "zp[(indices[i]-1)]: " << zp[(indices[i]-1)] << std::endl;
+      // // Rcout << "test3d" << std::endl;
+
+      // TODO It must be tremendously inefficient to keep creating a vector here
+      // approx_cpp returns a singleton vector here as zp[(indices[i]-1)] is a scalar
+      ccut[i]=approx_cpp(xtest,y_in,NumericVector::create(zp_index))[0];
+
+      // // Rcout << "test3e" << std::endl;
+    } else {
+
+      // // Rcout << "test3f" << std::endl;
+      ccut[i] = p[(indices[i]-1)];
+
+      // // Rcout << "test3g" << std::endl;
     }
   }
-
   
+  // Rcout << "test4" << std::endl;
+
   ccut=ccut*(1+ 1e-6); // ccut + 1e-8 // prevent floating-point comparison errors
   
     NumericVector out(ccut.size());
@@ -214,31 +210,28 @@ List vl_mode2(NumericVector p, NumericVector q, IntegerVector indices, IntegerVe
       NumericVector p_negFold = p[negFoldMask];
       NumericVector q_negFold = q[negFoldMask];
 
-      // 0-based mask
-      IntegerVector w;
+      LogicalVector p_negFold_w_bool = p_negFold > 0.5;
+      NumericVector p_negFold_w = p_negFold[p_negFold_w_bool];
+      int w_size = p_negFold_w.size();
 
-      for(int j = 0; j < p_negFold.size(); j++) {
-        if(p_negFold[j] > 0.5) {
-          w.push_back(j);
-        }
-      }
+      correct = (1.0+ecdf_cpp(q_negFold[p_negFold_w_bool], pval2)*p_negFold.size())/(1.0+ecdf_cpp(q_negFold, pval2)*p_negFold.size());
 
-      //correct=cummin((1+ecdf(q[-fold][which(p[-fold]>0.5)])(pval2)*length(p[-fold]))/
-      NumericVector p_negFold_w = p_negFold[w];
+      // TODO explain why we wrap here, for now, just note that not doing this leads to a compiler error
+      correct=NumericVector(cummin(correct));
 
-      NumericVector correct = cummin((1+ecdf_cpp(q_negFold[p_negFold_w], pval2)*p_negFold.size()));
+      correct_ccut=approx_cpp(pval2,correct,q[(indices-1)]);
 
-        if(indices != R_NilValue) correct_ccut=approx_cpp(pval2,correct,q[indices]);
-      //cummin((1+ecdf(pc[which(p>0.5)])(pc)*length(p))/(1+ rank(pc)))
       } else {
-        correct(pval2.size(), 1);
-        correct_ccut(ccut.size(), 1);
+        correct = NumericVector(pval2.size(), 1.0);
+        correct_ccut = NumericVector(ccut.size(), 1.0);
       }
 
-    if(indices != R_NilValue) ccut=ccut*correct_ccut;
+    // Rcout << "test5" << std::endl;
 
-    NumericVector zp_ind = zp[indices];
-    NumericVector zq_ind = zq[indices];
+    ccut=ccut*correct_ccut;
+
+    NumericVector zp_ind = zp[(indices-1)];
+    NumericVector zq_ind = zq[(indices-1)];
 
     // TODO I'm not sure if nt/mx will behave as it should
     zp_ind = zp_ind*(nt/mx);
@@ -251,22 +244,15 @@ List vl_mode2(NumericVector p, NumericVector q, IntegerVector indices, IntegerVe
     zq_ind = pmax(1, pmin(zq_ind,nv));
 
     for(int i = 0; i < yval2.size(); i++) {
-      IntegerVector w;
+      LogicalVector zq_negFold_yval2_bool = zq_negFold > yval2[i];
+      NumericVector zp_negFold_yval2 = zp_negFold[zq_negFold_yval2_bool];
+      int w_size = zp_negFold_yval2.size();
 
-      for(int j = 0; j < zq_negFold.size(); j++) {
-        if(zq_negFold[j] > yval2[i]) {
-          w.push_back(j);
-        }
-      }
-
-      if(w.size() >=1) {
+      if(w_size >=1) {
         
-        NumericVector cfsub = (1+(1.0/w.size()))*ptest/(1+(1/w.size()))-ecdf_cpp(zp_negFold[w], xtest);
+        NumericVector cfsub = (1+(1.0/w_size))*ptest/(1+(1/w_size))-ecdf_cpp(zp_negFold_yval2, xtest);
 
-        // Compiler does not like the following line and error message is completely opaque to me, so I resort to a more verbose construction
-        //cfsub=cummin(cfsub);
-
-        NumericVector cummin_cfsub=cummin(cfsub);
+        cfsub=NumericVector(cummin(cfsub));
 
         // TODO not sure if f=1 matters if method = 'linear'
         //        xval2.column(i) = approx_cpp((cfsub-gx*xtest + gx*mx)*correct[i],xtest,ccut,rule=2,f=1);
@@ -277,16 +263,7 @@ List vl_mode2(NumericVector p, NumericVector q, IntegerVector indices, IntegerVe
       }
     }
 
-
-    IntegerVector w;
-
-    for(int j = 0; j < fold.size(); j++) {
-      if(zq_negFold[j] >= zq_indices[j]) {
-        w.push_back(j);
-      }
-    }
-
-        
+    // Rcout << "test6" << std::endl;
   
  // https://stackoverflow.com/questions/49026407/how-can-i-do-logical-operations-on-rcppnumericmatrix-using-a-sugar-manner
 
@@ -299,10 +276,11 @@ List vl_mode2(NumericVector p, NumericVector q, IntegerVector indices, IntegerVe
     LogicalMatrix xval2_w(xval2_nrow, xval2_ncol);
     for(int i = 0; i < xval2_nrow; ++i) {
       for(int j = 0; j < xval2_ncol; ++j) {
-        //xval2[which(xval2> -qnorm(p_threshold/2))]=-qnorm(p_threshold/2)
         xval2(i,j) = xval2(i,j) > comparator ? comparator : xval2(i,j); 
       }
     }
+
+    // Rcout << "test7" << std::endl;
 
     // TODO there must be some sugar for this copying operation
     if(closed) {
@@ -313,18 +291,28 @@ List vl_mode2(NumericVector p, NumericVector q, IntegerVector indices, IntegerVe
       yval2_mod[1] = 0;
       yval2_mod[yval2_length+2] = R_PosInf;
       yval2_mod[yval2_length+3] = R_PosInf;
+
+      // Rcout << "test7a" << std::endl;
+
       for(int i = 0; i < yval2_length; i++) {
         yval2_mod[2+i] = yval2[i];
       }
       yval2 = yval2_mod;
+
+
+      // Rcout << "test7b" << std::endl;
 
       //xval2=cbind(Inf,Inf,xval2,xval2[,nv],Inf)
       NumericMatrix xval2_mod(xval2_nrow, xval2_ncol+4);
       NumericVector r_posinf_vec(xval2_nrow, R_PosInf);
       xval2_mod.column(0) = r_posinf_vec;
       xval2_mod.column(1) = r_posinf_vec;
-      xval2_mod.column(xval2_ncol+2) = xval2.column(nv);
+
+      // Rcout << "test7bi" << std::endl;
+      xval2_mod.column(xval2_ncol+2) = xval2.column(nv-1);
       xval2_mod.column(xval2_ncol+3) = r_posinf_vec;
+
+      // Rcout << "test7c" << std::endl;
 
       for(int i = 0; i < xval2_nrow; ++i) {
         for(int j = 0; j < xval2_ncol; ++j) {
@@ -336,12 +324,14 @@ List vl_mode2(NumericVector p, NumericVector q, IntegerVector indices, IntegerVe
 
     }
 
+    // Rcout << "test8" << std::endl;
+
     NumericMatrix X;
     NumericVector Y;
 
     // TODO might be able to use Rcpp::pnorm for these calls
 
-    if(scale[1]=="p") {
+    if(scale[0]=="p") {
       X = NumericMatrix(xval2.nrow(), xval2.ncol());
 
       for(int i = 0; i < xval2_nrow; ++i) {
@@ -360,6 +350,8 @@ List vl_mode2(NumericVector p, NumericVector q, IntegerVector indices, IntegerVe
       X = xval2;
       Y = yval2;
     }
+
+    // Rcout << "test9" << std::endl;
 
     return List::create(Named("x")=X, Named("y")=Y);
 }

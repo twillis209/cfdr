@@ -35,7 +35,8 @@ ind2=intersect(candidate_indices,fold2)
 ind3=intersect(candidate_indices,fold3)
 
 #vl(p,q,indices=ind1,mode=2,fold=fold1)
-vl_mode2(p=p,q=q,indices=ind1, fold=fold1)
+res<-vl_mode2(p=p,q=q,indices=ind1,fold=fold1)
+test_v1<-vl(p,q,indices=ind1,mode=2,fold=fold1)
 
 #test_that("Test R-based implementation of vl", {
 #  test_v1=vl(p,q,indices=ind1,mode=2,fold=fold1)   
