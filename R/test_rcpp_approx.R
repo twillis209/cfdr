@@ -27,3 +27,19 @@ test_that("Handles typical use case", {
   expect_equal(approx_cpp(x,y,xout), approx(x,y,xout,rule=2)$y)
 })
 
+set.seed(42)
+
+x<-1:1e6
+y<-rnorm(1e6)
+xout<-1+(runif(1e6)*1e6)
+
+mbm<-microbenchmark(
+  "stats::approx"={
+    yout<-approx(x,y,xout,rule=2)$y
+  },
+  "approx_cpp"={
+    yout<-approx_cpp(x,y,xout)
+  },
+  times=5
+  )
+
