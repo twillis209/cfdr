@@ -85,19 +85,23 @@ NumericVector approx_cpp(NumericVector x, NumericVector y, NumericVector xout) {
 // TODO maybe we should correct the 1-indexed vectors at the outset
 
 // [[Rcpp::export]]
-void vl_mode2(NumericVector p, NumericVector q, IntegerVector indices, IntegerVector fold, bool adj, NumericVector at, int nt, int nv, double p_threshold, CharacterVector scale, bool closed, bool verbose, double gx) {
+List vl_mode2(NumericVector p, NumericVector q, IntegerVector indices, IntegerVector fold, bool adj=true, int nt=5000, int nv=1000, double p_threshold=0, CharacterVector scale=CharacterVector::create("p", "z"), bool closed=true, bool verbose=false, double gx=10e-5, Nullable<NumericVector> at=R_NilValue) {
 //void vl_mode2(const NumericVector& p, const NumericVector& q, const IntegerVector& indices, const IntegerVector& fold, bool adj = TRUE, const NumericVector& at = R_NilValue, int nt = 5000, int nv = 1000, double p_threshold = 0, CharacterVector scale = CharacterVector({"p", "z"}), bool closed = TRUE, bool verbose = FALSE, double gx=10^-5) {
+
 
   NumericVector zp = qnorm(p/2);
   NumericVector zq = -1.0*qnorm(q/2);
+
 
   if (any(!is_finite(zp+zq))) {
     stop("P-values p,q must be in [1e-300,1]");
   }
 
+
   // maximum limits for integration
   double mx = max(NumericVector::create(10.0, max(abs(-qnorm(p/2)))));
   double my = max(NumericVector::create(10.0, max(abs(-qnorm(q/2)))));
+
 
   //gx=0 //1/1000  // use for 'tiebreaks'- if a point is on a curve with nonzero area, force the L-curve through that point
 
@@ -273,32 +277,91 @@ void vl_mode2(NumericVector p, NumericVector q, IntegerVector indices, IntegerVe
       }
     }
 
-    /*
+
+    IntegerVector w;
+
+    for(int j = 0; j < fold.size(); j++) {
+      if(zq_negFold[j] >= zq_indices[j]) {
+        w.push_back(j);
+      }
+    }
 
         
   
  // https://stackoverflow.com/questions/49026407/how-can-i-do-logical-operations-on-rcppnumericmatrix-using-a-sugar-manner
-  
-  xval2[which(xval2> -qnorm(p_threshold/2))]=-qnorm(p_threshold/2)
 
-  if (closed) {
-    yval2=c(Inf,0,yval2,Inf,Inf)
-    xval2=cbind(Inf,Inf,xval2,xval2[,nv],Inf)
-  }
-  
-  if (scale[1]=="p") {
-    X=2*pnorm(-abs(xval2))
-    Y=2*pnorm(-abs(yval2))
-  } else {
-    X=xval2
-    Y=yval2
-  }
-    
-  return(list(x=X,y=Y))  
-    */
-  //  List out(2);
+    int xval2_nrow = xval2.nrow();
+    int xval2_ncol = xval2.ncol();
 
-  //  return out;
+    // The probability distribution functions in R:: deal with scalars and those in Rcpp:: with vectors, apparently the R::qnorm function has no defaults so one needs to call it verbosely like this
+    double comparator = -R::qnorm(p_threshold/2.0, 0.0, 1.0, true, false);
+
+    LogicalMatrix xval2_w(xval2_nrow, xval2_ncol);
+    for(int i = 0; i < xval2_nrow; ++i) {
+      for(int j = 0; j < xval2_ncol; ++j) {
+        //xval2[which(xval2> -qnorm(p_threshold/2))]=-qnorm(p_threshold/2)
+        xval2(i,j) = xval2(i,j) > comparator ? comparator : xval2(i,j); 
+      }
+    }
+
+    // TODO there must be some sugar for this copying operation
+    if(closed) {
+      // yval2=c(Inf,0,yval2,Inf,Inf)
+      int yval2_length = yval2.size();
+      NumericVector yval2_mod = NumericVector(4+yval2_length);
+      yval2_mod[0] = R_PosInf;
+      yval2_mod[1] = 0;
+      yval2_mod[yval2_length+2] = R_PosInf;
+      yval2_mod[yval2_length+3] = R_PosInf;
+      for(int i = 0; i < yval2_length; i++) {
+        yval2_mod[2+i] = yval2[i];
+      }
+      yval2 = yval2_mod;
+
+      //xval2=cbind(Inf,Inf,xval2,xval2[,nv],Inf)
+      NumericMatrix xval2_mod(xval2_nrow, xval2_ncol+4);
+      NumericVector r_posinf_vec(xval2_nrow, R_PosInf);
+      xval2_mod.column(0) = r_posinf_vec;
+      xval2_mod.column(1) = r_posinf_vec;
+      xval2_mod.column(xval2_ncol+2) = xval2.column(nv);
+      xval2_mod.column(xval2_ncol+3) = r_posinf_vec;
+
+      for(int i = 0; i < xval2_nrow; ++i) {
+        for(int j = 0; j < xval2_ncol; ++j) {
+          xval2_mod(i,j+2) = xval2(i,j);
+        }
+      }
+
+      xval2 = xval2_mod;
+
+    }
+
+    NumericMatrix X;
+    NumericVector Y;
+
+    // TODO might be able to use Rcpp::pnorm for these calls
+
+    if(scale[1]=="p") {
+      X = NumericMatrix(xval2.nrow(), xval2.ncol());
+
+      for(int i = 0; i < xval2_nrow; ++i) {
+        for(int j = 0; j < xval2_ncol; ++j) {
+          X(i,j) = 2.0*R::pnorm(-abs(xval2(i,j)), 0.0,1.0,true,false);
+        }
+      }
+
+      Y = NumericVector(yval2.size());
+
+      for(int i = 0; i < yval2.size(); ++i) {
+        Y[i] = 2.0*R::pnorm(-abs(yval2[i]), 0.0,1.0,true,false);
+      }
+
+    } else {
+      X = xval2;
+      Y = yval2;
+    }
+
+    return List::create(Named("x")=X, Named("y")=Y);
 }
 
 // TODO internal interpolation function, not used in mode 2

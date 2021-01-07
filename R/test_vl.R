@@ -34,11 +34,16 @@ ind1=intersect(candidate_indices,fold1)
 ind2=intersect(candidate_indices,fold2) 
 ind3=intersect(candidate_indices,fold3)
 
-test_that("Test R-based implementation of vl", {
-  test_v1=vl(p,q,indices=ind1,mode=2,fold=fold1)   
-  test_v2=vl(p,q,indices=ind2,mode=2,fold=fold2) 
-  test_v3=vl(p,q,indices=ind3,mode=2,fold=fold3)
-  expect_equal(v1, test_v1)
-  expect_equal(v2, test_v2)
-  expect_equal(v3, test_v3)
-})
+#vl(p,q,indices=ind1,mode=2,fold=fold1)
+vl_mode2(p=p,q=q,indices=ind1, fold=fold1)
+
+#test_that("Test R-based implementation of vl", {
+#  test_v1=vl(p,q,indices=ind1,mode=2,fold=fold1)   
+#  test_v2=vl(p,q,indices=ind2,mode=2,fold=fold2) 
+#  test_v3=vl(p,q,indices=ind3,mode=2,fold=fold3)
+#  expect_equal(v1, test_v1)
+#  expect_equal(v2, test_v2)
+#  expect_equal(v3, test_v3)
+#})
+
+# List vl_mode2(NumericVector p, NumericVector q, IntegerVector indices, IntegerVector fold, bool adj, NumericVector at, int nt, int nv, double p_threshold, CharacterVector scale, bool closed, bool verbose, double gx) {
