@@ -20,6 +20,12 @@ test_that("Handles xout value larger than max x in accordance with rule 2", {
   expect_equal(approx_cpp(x,x,c(11)), c(10));
 })
 
+test_that('Handles x values in descending order', {
+  testSample<-5:1
+  expect_equal(approx_cpp(testSample,testSample,testSample), testSample)
+})
+
+
 test_that("Handles typical use case", {
   x<-1:10
   y<-rnorm(10)

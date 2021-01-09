@@ -17,6 +17,11 @@ test_that('Test ecdf_cpp with duplicates in the sample', {
   expect_equal(ecdf_cpp(testSample, testSample), c(0.2,0.6,0.6,0.8,1.0))
 })
 
+test_that('Test ecdf_cpp with reverse order', {
+  testSample<-5:1
+  expect_equal(ecdf_cpp(testSample,testSample), testSample)
+})
+
 test_that('Test ecdf_cpp with standard normal samples', {
   ref<-rnorm(1e3)
   sam<-rnorm(1e2)
