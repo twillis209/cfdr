@@ -63,6 +63,7 @@ test_that("Test part 3 of Rcpp-implementation", {
   expect_equal(R_v1_part3[["correct"]], Rcpp_v1_part3[["correct"]])
 })
 
+# TODO ecdf_mat and cfsub_mat assertions fail
 test_that("Test part 4 of Rcpp-implementation", {
   R_v1_part4<-Rvl_mode2_part4(p,q,ind1,fold1)
   Rcpp_v1_part4<-vl_mode2_part4(p,q,ind1,fold1)
@@ -80,47 +81,64 @@ test_that("Test part 5 of Rcpp-implementation", {
   expect_equal(R_v1_part5[["yval2"]], Rcpp_v1_part5[["yval2"]])
 })
 
-# It seems that these actually match very closely
-test_that("Test part 5.5 of Rcpp implementation", {
-  Rcpp_v1_part5<-vl_mode2_part5(p,q,ind1,fold1)
-  R_v1_part6<-Rvl_mode2_part6(p,q,ind1,fold1)
-  X=2*pnorm(-abs(Rcpp_v1_part5$xval2))
-  Y=2*pnorm(-abs(Rcpp_v1_part5$yval2))
-  r_X<-R_v1_part6$x
-  r_Y<-R_v1_part6$y
-})
-
-# TODO the test passes but the values of X and Y differ, look at X-r_X
-# It seems that the 
-test_that("Test part 6 of Rcpp-implementation", {
-  R_v1_part6<-Rvl_mode2_part6(p,q,ind1,fold1)
-  Rcpp_v1_part6<-vl_mode2_part6(p,q,ind1,fold1)
-  X<-Rcpp_v1_part6$x
-  Y<-Rcpp_v1_part6$y
-  r_X<-R_v1_part6$x
-  r_Y<-R_v1_part6$y
+test_that("Test full Rcpp implementation", {
+  R_v1<-Rvl_mode2(p,q,ind1,fold1)
+  Rcpp_v1<-vl_mode2(p,q,ind1,fold1)
+  X<-Rcpp_v1$x
+  Y<-Rcpp_v1$y
+  r_X<-R_v1$x
+  r_Y<-R_v1$y
   expect_equal(r_X,X)
   expect_equal(r_Y,Y)
 })
 
-test_that("Rcpp implementation reproduces behaviour of R implementation w.r.t. BH procedure output", {
-  v1=vl(p,q,indices=ind1,mode=2,fold=fold1);  
-  v2=vl(p,q,indices=ind2,mode=2,fold=fold2); 
-  v3=vl(p,q,indices=ind3,mode=2,fold=fold3); 
+test_that("Rcpp implementation of vl reproduces behaviour of R implementation of vl w.r.t. v-value output", {
+  v1=vl(p,q,indices=ind1,mode=2,fold=fold1)  
+  v2=vl(p,q,indices=ind2,mode=2,fold=fold2) 
+  v3=vl(p,q,indices=ind3,mode=2,fold=fold3)
+
   v_fold=rep(1,n)
+
   v_fold[ind1]=il(v1,pi0_null=est_q0_pars[1],sigma_null=est_q0_pars[2],distx="norm")
   v_fold[ind2]=il(v2,pi0_null=est_q0_pars[1],sigma_null=est_q0_pars[2],distx="norm")
   v_fold[ind3]=il(v3,pi0_null=est_q0_pars[1],sigma_null=est_q0_pars[2],distx="norm")
+
+  v1_Rcpp=vl_mode2(p,q,indices=ind1,fold=fold1)
+  v2_Rcpp=vl_mode2(p,q,indices=ind2,fold=fold2)
+  v3_Rcpp=vl_mode2(p,q,indices=ind3,fold=fold3)
+
+  v_fold_rcpp = rep(1,n)
+  v_fold_rcpp[ind1]=il(v1_Rcpp,pi0_null=est_q0_pars[1],sigma_null=est_q0_pars[2],distx="norm")
+  v_fold_rcpp[ind2]=il(v2_Rcpp,pi0_null=est_q0_pars[1],sigma_null=est_q0_pars[2],distx="norm")
+  v_fold_rcpp[ind3]=il(v3_Rcpp,pi0_null=est_q0_pars[1],sigma_null=est_q0_pars[2],distx="norm")
+
+  expect_equal(v_fold, v_fold_rcpp)
+})
+
+test_that("Rcpp implementation of vl reproduces behaviour of R implementation of vl w.r.t. BH procedure output", {
+  v1=vl(p,q,indices=ind1,mode=2,fold=fold1)  
+  v2=vl(p,q,indices=ind2,mode=2,fold=fold2) 
+  v3=vl(p,q,indices=ind3,mode=2,fold=fold3)
+
+  v_fold=rep(1,n)
+
+  v_fold[ind1]=il(v1,pi0_null=est_q0_pars[1],sigma_null=est_q0_pars[2],distx="norm")
+  v_fold[ind2]=il(v2,pi0_null=est_q0_pars[1],sigma_null=est_q0_pars[2],distx="norm")
+  v_fold[ind3]=il(v3,pi0_null=est_q0_pars[1],sigma_null=est_q0_pars[2],distx="norm")
+
   hit_fold=bh(v_fold,0.1)
 
-  v1_Rcpp=vl_mode2_part6(p,q,indices=ind1,fold=fold1)
-  v2_Rcpp=vl_mode2_part6(p,q,indices=ind2,fold=fold2)
-  v3_Rcpp=vl_mode2_part6(p,q,indices=ind3,fold=fold3)
+  v1_Rcpp=vl_mode2(p,q,indices=ind1,fold=fold1)
+  v2_Rcpp=vl_mode2(p,q,indices=ind2,fold=fold2)
+  v3_Rcpp=vl_mode2(p,q,indices=ind3,fold=fold3)
 
-  v_fold[ind1]=il(v1_Rcpp,pi0_null=est_q0_pars[1],sigma_null=est_q0_pars[2],distx="norm")
-  v_fold[ind2]=il(v2_Rcpp,pi0_null=est_q0_pars[1],sigma_null=est_q0_pars[2],distx="norm")
-  v_fold[ind3]=il(v3_Rcpp,pi0_null=est_q0_pars[1],sigma_null=est_q0_pars[2],distx="norm")
-  hit_fold_rcpp=bh(v_fold,0.1)
+  v_fold_rcpp = rep(1,n)
+  v_fold_rcpp[ind1]=il(v1_Rcpp,pi0_null=est_q0_pars[1],sigma_null=est_q0_pars[2],distx="norm")
+  v_fold_rcpp[ind2]=il(v2_Rcpp,pi0_null=est_q0_pars[1],sigma_null=est_q0_pars[2],distx="norm")
+  v_fold_rcpp[ind3]=il(v3_Rcpp,pi0_null=est_q0_pars[1],sigma_null=est_q0_pars[2],distx="norm")
+
+  hit_fold_rcpp=bh(v_fold_rcpp,0.1)
+
   expect_equal(hit_fold, hit_fold_rcpp)
 })
 
@@ -131,9 +149,9 @@ mbm<-microbenchmark(
     v3=vl(p,q,indices=ind3,mode=2,fold=fold3); 
   },
   "Rcpp"={
-    v1_Rcpp=vl_mode2_part6(p,q,indices=ind1,fold=fold1)
-    v2_Rcpp=vl_mode2_part6(p,q,indices=ind2,fold=fold2)
-    v3_Rcpp=vl_mode2_part6(p,q,indices=ind3,fold=fold3)
+    v1_Rcpp=vl_mode2(p,q,indices=ind1,fold=fold1)
+    v2_Rcpp=vl_mode2(p,q,indices=ind2,fold=fold2)
+    v3_Rcpp=vl_mode2(p,q,indices=ind3,fold=fold3)
   },
-  times=100
+  times=10
 )
