@@ -20,8 +20,7 @@
 #library(pbivnorm)
 #library(MASS)
 #library(fields)
-
-library(optimParallel)
+#library(optimParallel)
 
 ###########################################################################
 ## Functions ##############################################################
@@ -88,8 +87,11 @@ library(optimParallel)
 ##' for (i in 1:length(example_indices)) points(p[example_indices[i]],q[example_indices [i]],pch=16,col="blue")
 ##'
 vl=function(p,q,adj=TRUE,indices=NULL,at=NULL,mode=0,fold=NULL,nt=5000, nv=1000, p_threshold=0, scale=c("p","z"), closed=TRUE,verbose=FALSE,gx=10^-5) {
+  if(mode==2 & !is.null(indices) & !is.null(fold)) {
+    return(vl_mode2(p=p,q=q,indices=indices,fold=fold,adj=adj,at=at,nt=nt,nv=nv,p_threshold=p_threshold,scale=scale,closed=closed,verbose=verbose,gx=gx))
+  }
   
-  # internal interpolation function
+                                        # internal interpolation function
   ff=function(xtest,xx,cxi) {
     if (xx[1] <= cxi) return(xtest[1]); if (xx[length(xx)] >= cxi ) return(xtest[length(xx)])
     w1=max(which(xx> cxi)); w2=1+w1 #min(which(xx< cxi))

@@ -5,9 +5,12 @@ Authors@R: c(person("James", "Liley", email = "james.liley@igmm.ed.ac.uk", role 
 Description: Implements conditional false-discovery rate hypothesis testing, used to perform high-dimensional hypothesis tests. Requires a set of summary statistics in an experiment of interest, and 'levers' on a second set of summary statistics at the same variables for a second experiment. Enables frequentist hypothesis testing with overall strong control of false-discovery rate. Can use several estimators of the cFDR function cFDR(p,q)=Pr(P<p,Q<q|H0).
 Depends: R (>= 3.3.3)
 License: Freely distributable
+LinkingTo: Rcpp
 Imports: MASS,
  mnormt,
- fields
+ fields,
+ optimParallel,
+ Rcpp
 Encoding: UTF-8
 LazyData: true
 RoxygenNote: 6.1.1
