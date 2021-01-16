@@ -2,7 +2,7 @@ library(testthat)
 library(Rcpp)
 library(microbenchmark)
 
-sourceCpp('vl.cpp')
+set.seed(42)
 
 test_that("Test ecdf_cpp on some trivial cases", {
   testSample<-seq(0.1, 1.0, length.out=10)
@@ -22,18 +22,3 @@ test_that('Test ecdf_cpp with standard normal samples', {
   sam<-rnorm(1e2)
   expect_equal(ecdf_cpp(ref, sam), ecdf(ref)(sam))
 })
-
-set.seed(42)
-
-ref<-rnorm(1e3)
-sam<-rnorm(1e2)
-
-mbm<-microbenchmark(
-  "stats::ecdf"={
-    ecdf(ref)(sam)
-  },
-  "ecdf_cpp"={
-    ecdf_cpp(ref, sam)
-  },
-  times=20
-  )

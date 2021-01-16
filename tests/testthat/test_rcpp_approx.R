@@ -1,8 +1,4 @@
-library(testthat)
-library(Rcpp)
-library(microbenchmark)
-
-sourceCpp('vl.cpp')
+set.seed(42)
 
 test_that("Test approx_cpp on some trivial cases", {
   x<-1:10
@@ -25,27 +21,9 @@ test_that('Handles x values in descending order', {
   expect_equal(approx_cpp(testSample,testSample,testSample), testSample)
 })
 
-
 test_that("Handles typical use case", {
   x<-1:10
   y<-rnorm(10)
   xout<-c(0,seq(1,10,length.out=51),11)
   expect_equal(approx_cpp(x,y,xout), approx(x,y,xout,rule=2)$y)
 })
-
-set.seed(42)
-
-x<-1:1e6
-y<-rnorm(1e6)
-xout<-1+(runif(1e6)*1e6)
-
-mbm<-microbenchmark(
-  "stats::approx"={
-    yout<-approx(x,y,xout,rule=2)$y
-  },
-  "approx_cpp"={
-    yout<-approx_cpp(x,y,xout)
-  },
-  times=5
-  )
-

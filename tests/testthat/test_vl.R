@@ -3,9 +3,6 @@ library(Rcpp)
 library(testthat)
 library(microbenchmark)
 
-sourceCpp('vl.cpp')
-source('vl_mode2.R')
-
 set.seed(1)
 
 n=10000; n1p=100; n1pq=100; n1q=100
@@ -34,60 +31,15 @@ ind1=intersect(candidate_indices,fold1)
 ind2=intersect(candidate_indices,fold2) 
 ind3=intersect(candidate_indices,fold3)
 
-# 'U' for ur-implementation
-U_v1<-vl(p=p,q=q,indices=ind1,fold=fold1,mode=2)
-
-test_that("Test part 1 of Rcpp-implementation", {
-  R_v1_part1<-Rvl_mode2_part1(p,q,indices=ind1,fold=fold1)
-  Rcpp_v1_part1<-vl_mode2_part1(p,q,ind1,fold1)
-  expect_equal(R_v1_part1["zp"], Rcpp_v1_part1["zp"])
-  expect_equal(R_v1_part1["zq"], Rcpp_v1_part1["zq"])
-  expect_equal(R_v1_part1["my"], Rcpp_v1_part1["my"])
-  expect_equal(R_v1_part1["mx"], Rcpp_v1_part1["mx"])
-  expect_equal(R_v1_part1["xval2"], Rcpp_v1_part1["xval2"])
-  expect_equal(R_v1_part1["pval2"], Rcpp_v1_part1["pval2"])
-  expect_equal(R_v1_part1["ptest"], Rcpp_v1_part1["ptest"])
-})
-
-test_that("Test part 2 of Rcpp-implementation", {
-  R_v1_part2<-Rvl_mode2_part2(p,q,indices=ind1,fold=fold1)
-  Rcpp_v1_part2<-vl_mode2_part2(p,q,ind1,fold1)
-  expect_equal(R_v1_part2["ccut"], Rcpp_v1_part2["ccut"])
-})
-
-test_that("Test part 3 of Rcpp-implementation", {
-  R_v1_part3<-Rvl_mode2_part3(p,q,indices=ind1,fold=fold1)
-  Rcpp_v1_part3<-vl_mode2_part3(p,q,ind1,fold1)
-  expect_equal(R_v1_part3[["ccut"]], Rcpp_v1_part3[["ccut"]])
-  expect_equal(R_v1_part3[["correct_ccut"]], Rcpp_v1_part3[["correct_ccut"]])
-  expect_equal(R_v1_part3[["correct"]], Rcpp_v1_part3[["correct"]])
-})
-
-# TODO ecdf_mat and cfsub_mat assertions fail
-test_that("Test part 4 of Rcpp-implementation", {
-  R_v1_part4<-Rvl_mode2_part4(p,q,ind1,fold1)
-  Rcpp_v1_part4<-vl_mode2_part4(p,q,ind1,fold1)
-  expect_equal(R_v1_part4[["xval2"]], Rcpp_v1_part4[["xval2"]])
-  expect_equal(R_v1_part4[["zp_ind"]], Rcpp_v1_part4[["zp_ind"]])
-  expect_equal(R_v1_part4[["zq_ind"]], Rcpp_v1_part4[["zq_ind"]])
-  expect_equal(R_v1_part4[["cfsub_mat"]], Rcpp_v1_part4[["cfsub_mat"]])
-  expect_equal(R_v1_part4[["ecdf_mat"]], Rcpp_v1_part4[["ecdf_mat"]])
-})
-
-test_that("Test part 5 of Rcpp-implementation", {
-  R_v1_part5<-Rvl_mode2_part5(p,q,ind1,fold1)
-  Rcpp_v1_part5<-vl_mode2_part5(p,q,ind1,fold1)
-  expect_equal(R_v1_part5[["xval2"]], Rcpp_v1_part5[["xval2"]])
-  expect_equal(R_v1_part5[["yval2"]], Rcpp_v1_part5[["yval2"]])
-})
-
 test_that("Test full Rcpp implementation", {
-  R_v1<-Rvl_mode2(p,q,ind1,fold1)
-  Rcpp_v1<-vl_mode2(p,q,ind1,fold1)
-  X<-Rcpp_v1$x
-  Y<-Rcpp_v1$y
-  r_X<-R_v1$x
-  r_Y<-R_v1$y
+  Rcpp_vl<-vl_mode2(p=p,q=q,indices=ind1,fold=fold1)
+  v1<-vl(p,q,indices=ind1,mode=2,fold=fold1)
+
+  X<-Rcpp_vl$x
+  Y<-Rcpp_vl$y
+  r_X<-v1$x
+  r_Y<-v1$y
+
   expect_equal(r_X,X)
   expect_equal(r_Y,Y)
 })
@@ -141,17 +93,3 @@ test_that("Rcpp implementation of vl reproduces behaviour of R implementation of
 
   expect_equal(hit_fold, hit_fold_rcpp)
 })
-
-mbm<-microbenchmark(
-  "R"={
-    v1=vl(p,q,indices=ind1,mode=2,fold=fold1);  
-    v2=vl(p,q,indices=ind2,mode=2,fold=fold2); 
-    v3=vl(p,q,indices=ind3,mode=2,fold=fold3); 
-  },
-  "Rcpp"={
-    v1_Rcpp=vl_mode2(p,q,indices=ind1,fold=fold1)
-    v2_Rcpp=vl_mode2(p,q,indices=ind2,fold=fold2)
-    v3_Rcpp=vl_mode2(p,q,indices=ind3,fold=fold3)
-  },
-  times=10
-)

@@ -64,7 +64,7 @@ p0=2*pnorm(-abs(zp0)); q0=2*pnorm(-abs(zq0))
 
 
 # Proportion of values p0,q0 falling in region with co-ordinates v1$x[2,],v1$y
-length(which(in.out(cbind(v1$x[2,],v1$y),cbind(p0,q0))))/nsc
+length(which(mgcv::in.out(cbind(v1$x[2,],v1$y),cbind(p0,q0))))/nsc
 
 # Value of integral over the region
 int_true[2] 

@@ -48,10 +48,10 @@ fold_id=(1:n) \%\% 3
 example_indices=c(4262, 268,83,8203)
 
 
-v1=vlo(p,q,f0,f,indices=example_indices); 
-plot(p,q,cex=0.5,col="gray",xlim=c(0,0.001),ylim=c(0,1), main="Oracle rejection regions"); 
-for (i in 1:length(example_indices)) lines(v1$x[i,],v1$y); 
-for (i in 1:length(example_indices)) points(p[example_indices[i]],q[example_indices[i]],qh=16,col="blue")
+#v1=vlo(p,q,f0,f,indices=example_indices); 
+#plot(p,q,cex=0.5,col="gray",xlim=c(0,0.001),ylim=c(0,1), main="Oracle rejection regions"); 
+#for (i in 1:length(example_indices)) lines(v1$x[i,],v1$y); 
+#for (i in 1:length(example_indices)) points(p[example_indices[i]],q[example_indices[i]],qh=16,col="blue")
 
 }
 \author{

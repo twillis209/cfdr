@@ -51,6 +51,7 @@
 ##' @param closed determines whether curves are closed polygons encircling regions L (closed=T), or lines indicating the rightmost border of regions L
 ##' @param verbose print progress if mode=1
 ##' @export
+##' @importFrom stats qnorm pnorm ecdf approx   
 ##' @author James Liley
 ##' @return list containing elements x, y. Assuming n curves are calculated (where n=length(indices) or length(at)) and closed=T, x is a matrix of dimension n x (4+nv), y ix a vector of length (4+nv).
 ##' @examples 
@@ -87,8 +88,9 @@
 ##' for (i in 1:length(example_indices)) points(p[example_indices[i]],q[example_indices [i]],pch=16,col="blue")
 ##'
 vl=function(p,q,adj=TRUE,indices=NULL,at=NULL,mode=0,fold=NULL,nt=5000, nv=1000, p_threshold=0, scale=c("p","z"), closed=TRUE,verbose=FALSE,gx=10^-5) {
+
   if(mode==2 & !is.null(indices) & !is.null(fold)) {
-    return(vl_mode2(p=p,q=q,indices=indices,fold=fold,adj=adj,at=at,nt=nt,nv=nv,p_threshold=p_threshold,scale=scale,closed=closed,verbose=verbose,gx=gx))
+  return(vl_mode2(p=p,q=q,indices=indices,fold=fold,adj=adj,at=at,nt=nt,nv=nv,p_threshold=p_threshold,scale=scale,closed=closed,verbose=verbose,gx=gx))
   }
   
                                         # internal interpolation function
@@ -114,7 +116,6 @@ vl=function(p,q,adj=TRUE,indices=NULL,at=NULL,mode=0,fold=NULL,nt=5000, nv=1000,
   
   yval2=seq(0,my,length.out=nv+1)[1:nv]; xval2=outer(rep(1,length(ccut)),yval2); pval2=2*pnorm(-yval2)
   xtest=seq(0,mx,length.out=nt); ptest=2*pnorm(-xtest)
-  
   
   if (!is.null(indices)) { # set ccut. NOT equal to cfdr at the points; needs to be adjusted since an additional test point is used in determination of L
     if (mode==1) {
@@ -161,8 +162,6 @@ vl=function(p,q,adj=TRUE,indices=NULL,at=NULL,mode=0,fold=NULL,nt=5000, nv=1000,
   if (verbose & mode==1) print(paste0(length(ccut)," regions to calculate"))
   
   out=rep(0,length(ccut))
-  
-  
   
   if (mode==0) {
     
@@ -280,13 +279,6 @@ vl=function(p,q,adj=TRUE,indices=NULL,at=NULL,mode=0,fold=NULL,nt=5000, nv=1000,
   
 }
 
-
-
-
-
-
-
-
 ##' Return co-ordinates of L-regions using 'oracle' method in which PDFs of ZP,ZQ|HP0 and ZP,ZQ
 ##' are known
 ##' 
@@ -313,15 +305,17 @@ vl=function(p,q,adj=TRUE,indices=NULL,at=NULL,mode=0,fold=NULL,nt=5000, nv=1000,
 ##' p=2*pnorm(-abs(zp)); q=2*pnorm(-abs(zq))
 ##' fold_id=(1:n) %% 3
 ##' 
+##' # estimate parameters of underying dataset
+##' fit_pars=fit.4g(cbind(zp,zq))$pars
 ##' 
 ##' # points to generate L-regions for
 ##' example_indices=c(4262, 268,83,8203)
 ##' 
 ##' 
-##' v1=vlo(p,q,f0,f,indices=example_indices); 
-##' plot(p,q,cex=0.5,col="gray",xlim=c(0,0.001),ylim=c(0,1), main="Oracle rejection regions"); 
-##' for (i in 1:length(example_indices)) lines(v1$x[i,],v1$y); 
-##' for (i in 1:length(example_indices)) points(p[example_indices[i]],q[example_indices[i]],qh=16,col="blue")
+##' #v1=vlo(p,q,f0,f,indices=example_indices); 
+##' #plot(p,q,cex=0.5,col="gray",xlim=c(0,0.001),ylim=c(0,1), main="Oracle rejection regions"); 
+##' #for (i in 1:length(example_indices)) lines(v1$x[i,],v1$y); 
+##' #for (i in 1:length(example_indices)) points(p[example_indices[i]],q[example_indices[i]],qh=16,col="blue")
 ##'
 vlo=function(p,q,f0,f,indices=NULL,at=NULL,nt=5000, nv=1000, scale=c("p","z"), closed=T) {
   #vlx=function(p,q,pars,adj=T,indices=NULL,at=NULL,fold=NULL,p_threshold=0,nt=5000, nv=1000,scale=c("p","z"),closed=T) {
@@ -376,12 +370,6 @@ vlo=function(p,q,f0,f,indices=NULL,at=NULL,nt=5000, nv=1000, scale=c("p","z"), c
   
 }
 
-
-
-
-
-
-
 ##' Return co-ordinates of L-regions for cFDR method using four-groups method, with or without estimation
 ##'  of Pr(H0|Pj<pj).
 ##'
@@ -415,10 +403,10 @@ vlo=function(p,q,f0,f,indices=NULL,at=NULL,nt=5000, nv=1000, scale=c("p","z"), c
 ##' p=2*pnorm(-abs(zp)); q=2*pnorm(-abs(zq))
 ##' fold_id=(1:n) %% 3
 ##' 
-##' # estimate parameters of underying dataset
+##' # estimate parameters of underlying dataset
 ##' fit_pars=fit.4g(cbind(zp,zq))$pars
 ##' 
-##' # estimate parameters of underying dataset, removing fold 1
+##' # estimate parameters of underlying dataset, removing fold 1
 ##' fit_pars_fold23=fit.4g(cbind(zp[which(fold_id!=1)],zq[which(fold_id!=1)]))$pars
 ##' 
 ##' 
@@ -523,14 +511,6 @@ vlx=function(p,q,pars,adj=1,indices=NULL,at=NULL,fold=NULL,p_threshold=0,nt=5000
   
   
 }
-
-
-
-
-
-
-
-
 
 ##' Return co-ordinates of L-regions for cFDR method using local four-groups method. Automatically includes an estimate of Pr(H0|Q<q).
 ##'
@@ -717,7 +697,7 @@ vly=function(p,q,adj=T,indices=NULL,at=NULL,mode=0,fold=NULL,p_threshold=0,nt=50
   zq[which(zq > my)]=my
   
   zp[sub][which(zp>mx)]=mx; zq[sub][which(zq>my)]=my; w=which(is.finite(zp[sub]+zq[sub])); rr=max(c(12,mx,my)) 
-  kpq=kde2d(zp[sub],zq[sub],n=res,lims=c(0,rr,0,rr),...)
+  kpq=MASS::kde2d(zp[sub],zq[sub],n=res,lims=c(0,rr,0,rr),...)
   int2_kpq=t(apply(apply(kpq$z[res:1,res:1],2,cumsum),1,cumsum))[res:1,res:1]
   int2_kpq[which(int2_kpq==0)]=min(int2_kpq[which(int2_kpq>0)]) # avoid 0/0 errors
   int_kpq=t(outer(int2_kpq[1,],rep(1,res)))
@@ -726,7 +706,7 @@ vly=function(p,q,adj=T,indices=NULL,at=NULL,mode=0,fold=NULL,p_threshold=0,nt=50
   cgrid=kgrid; cgrid$z=int_p/kgrid$z; cgrid$z=apply(cgrid$z,2,cummin)
   
   
-  if (!is.null(indices)) ccut= interp.surface(cgrid,cbind(pmin(zp[indices],mx),pmin(zq[indices],my))) 
+  if (!is.null(indices)) ccut= fields::interp.surface(cgrid,cbind(pmin(zp[indices],mx),pmin(zq[indices],my))) 
   out=rep(0,length(ccut))
   
   yval2=seq(0,my,length.out=nv+1)[1:nv]; xval2=outer(rep(1,length(ccut)),yval2); pval2=2*pnorm(-yval2)
@@ -746,7 +726,7 @@ vly=function(p,q,adj=T,indices=NULL,at=NULL,mode=0,fold=NULL,p_threshold=0,nt=50
   
   for (i in 1:length(yval2)) {
     w=which(zq > yval2[i])
-    xdenom=interp.surface(kgrid,cbind(xtest,rep(yval2[i],length(xtest))))
+    xdenom=fields::interp.surface(kgrid,cbind(xtest,rep(yval2[i],length(xtest))))
     if (length(w)>2) {
       cfx=cummin(ptest/xdenom)
       xval2[,i]=approx(cfx,xtest,ccut/correct[i],rule=2,method="const",f=1)$y
@@ -855,7 +835,7 @@ vlyl=function(p,q,indices=NULL,at=NULL,mode=0,fold=NULL,p_threshold=0,nt=5000,nv
   
   px=dnorm(seq(lims[1],lims[2],length.out=res)) # Expected normal kernel density  
   
-  kpq=kde2d(c(zp[sub],zp[sub],-zp[sub],-zp[sub]),c(zq[sub],-zq[sub],-zq[sub],zq[sub]),n=res,lims=lims,h=c(1,1),...) # Kernel density of P,Q
+  kpq=MASS::kde2d(c(zp[sub],zp[sub],-zp[sub],-zp[sub]),c(zq[sub],-zq[sub],-zq[sub],zq[sub]),n=res,lims=lims,h=c(1,1),...) # Kernel density of P,Q
   #  kpq$z=pmax(kpq$z,outer(px,px)) # minimum value is normal density; needed for regularisation
   kpq$z=apply(kpq$z,2,function(x) rev(cummax(rev(x))))
   
@@ -875,14 +855,14 @@ vlyl=function(p,q,indices=NULL,at=NULL,mode=0,fold=NULL,p_threshold=0,nt=5000,nv
   
   #	rev(cummax(rev(x))))
   
-  if (!is.null(indices)) ccut= interp.surface(cgrid,cbind(pmin(zp[indices],mx),pmin(zq[indices],my)))*1.01 
+  if (!is.null(indices)) ccut= fields::interp.surface(cgrid,cbind(pmin(zp[indices],mx),pmin(zq[indices],my)))*1.01 
   out=rep(0,length(ccut))
   
   yval2=seq(0,my,length.out=nv+1)[1:nv]; xval2=outer(rep(1,length(ccut)),yval2); pval2=2*pnorm(-yval2)
   xtest=seq(0,my,length.out=nt); ptest=2*pnorm(-xtest)
   
   for (i in 1:length(yval2)) {
-    xdenom=interp.surface(cgrid,cbind(xtest,rep(yval2[i],length(xtest))))
+    xdenom=fields::interp.surface(cgrid,cbind(xtest,rep(yval2[i],length(xtest))))
     cfx=xdenom
     xval2[,i]=approx(c(cfx,1.005*max(cfx)),c(xtest,0),ccut,rule=2,method="const",f=1)$y
   }
@@ -956,7 +936,7 @@ vlyl=function(p,q,indices=NULL,at=NULL,mode=0,fold=NULL,p_threshold=0,nt=5000,nv
 ##' 
 ##' 
 ##' # Proportion of values p0,q0 falling in region with co-ordinates v1$x[2,],v1$y
-##' length(which(in.out(cbind(v1$x[2,],v1$y),cbind(p0,q0))))/nsc
+##' length(which(mgcv::in.out(cbind(v1$x[2,],v1$y),cbind(p0,q0))))/nsc
 ##' 
 ##' # Value of integral over the region
 ##' int_true[2] 
@@ -1033,10 +1013,10 @@ il=function(X,Y=NULL,pi0_null=NULL,sigma_null=rep(1,length(pi0_null)),rho_null=0
       ypart2=ysc* colSums(2*(pnorm(-t(X),mean=-m1a,sd=s1a)*pi0_null[ii]*dnorm(Y) +
           pnorm(-t(X),mean=-m1b,sd=s1b)*(1-pi0_null[ii])*
           pdf(Y/sigma_null[ii],...)/sigma_null[ii])) # negative rho part
-      infpart1=2*pi0_null[ii]*pbivnorm(-X[,yw],-Y[yw],rho=rho_null[ii]) +    
-        2*(1-pi0_null[ii])*pbivnorm(-X[,yw],-Y[yw]/sigma_null[ii],rho=rho_null[ii]/sigma_null[ii])
-      infpart2=2*pi0_null[ii]*pbivnorm(-X[,yw],-Y[yw],rho=-rho_null[ii]) +    
-        2*(1-pi0_null[ii])*pbivnorm(-X[,yw],-Y[yw]/sigma_null[ii],rho=-rho_null[ii]/sigma_null[ii])
+      infpart1=2*pi0_null[ii]*pbivnorm::pbivnorm(-X[,yw],-Y[yw],rho=rho_null[ii]) +    
+        2*(1-pi0_null[ii])*pbivnorm::pbivnorm(-X[,yw],-Y[yw]/sigma_null[ii],rho=rho_null[ii]/sigma_null[ii])
+      infpart2=2*pi0_null[ii]*pbivnorm::pbivnorm(-X[,yw],-Y[yw],rho=-rho_null[ii]) +    
+        2*(1-pi0_null[ii])*pbivnorm::pbivnorm(-X[,yw],-Y[yw]/sigma_null[ii],rho=-rho_null[ii]/sigma_null[ii])
       out=cbind(out,ypart1+ypart2 + infpart1+infpart2)
     }
   }
@@ -1061,6 +1041,7 @@ il=function(X,Y=NULL,pi0_null=NULL,sigma_null=rep(1,length(pi0_null)),rho_null=0
 ##' @param weights optional weights for parameters
 ##' @param sigma_range range of possible values for sigma (closed interval). Default [1,100]
 ##' @return a list containing parameters pars, likelihoods under h1 (Z distributed as above), likelihood under h0 (Z~N(0,1)) and likelihood ratio lr.
+##' @importFrom mnormt dmnorm
 ##' @export
 ##' @author James Liley
 ##' @examples
@@ -1131,6 +1112,7 @@ fit.2g=function(P, pars = c(0.5, 1.5), weights = rep(1, min(length(Z),dim(Z)[1])
 ##' @param sigma_range range of possible values for sigma (closed interval). Default [1,100]
 ##' @param ncores number of cores on which to run parallel optimisation procedure
 ##' @return a list containing parameters pars, likelihoods under h1 (Z distributed as above), likelihood under h0 (Z~N(0,1)) and likelihood ratio lr.
+##' @importFrom mnormt dmnorm
 ##' @export
 ##' @author James Liley
 fit.2g.parallel=function(P, pars = c(0.5, 1.5), weights = rep(1, min(length(Z),dim(Z)[1])), 
@@ -1171,24 +1153,19 @@ fit.2g.parallel=function(P, pars = c(0.5, 1.5), weights = rep(1, min(length(Z),d
     }
   }
 
-  cl<-makeCluster(ncores, type="FORK")
-  setDefaultCluster(cl=cl)
+  cl<-parallel::makeCluster(ncores, type="FORK")
+  parallel::setDefaultCluster(cl=cl)
   zx = optimParallel::optimParallel(pars, function(p) l2(p), lower = c(1e-05, sigma_range[1]), 
     upper = c(1 - (1e-05), sigma_range[2]), method = "L-BFGS-B", control = list(factr = 10), 
     ...)
-  setDefaultCluster(cl=NULL)
-  stopCluster(cl)
+  parallel::setDefaultCluster(cl=NULL)
+  parallel::stopCluster(cl)
   h1 = -zx$value
   h0 = -l2()
   yy = list(pars = zx$par, h1value = h1, h0value = h0, lr = h1 - 
       h0)
   return(yy)
 }
-
-
-
-
-
 
 ##' Fit a four-part mixture normal model to bivariate data. Assumes that data are distributed as one of
 ##'  N(0,1) x N(0,1)        with probability pi0
@@ -1295,8 +1272,6 @@ fit.4g= function (P, pars = c(0.7, 0.1,0.1, 2, 2, 2, 2), weights = rep(1,dim(Z)[
   return(list(pars=pars,lhood=hist[i-1,8],hist=hist))
 }
 
-
-
 ##' Run the Benjamini-Hochberg procedure
 ##' 
 ##' @title bh
@@ -1311,10 +1286,6 @@ bh=function(P,alpha) {
   w=which(P/ox <= alpha/n)
   if (length(w)>0) return(which(ox<= max(ox[w]))) else return(c())
 }
-
-
-
-
 
 ##' Estimate cFDR at a set of points using counting-points method (cFDR1 or cFDR1s)
 ##' 
@@ -1357,15 +1328,6 @@ cfdr=function(p,q,sub=which(qnorm(p/2)^2 + qnorm(q/2)^2 > 4),exclude=NULL,adj=F)
   cf[which(cf>1)]=1
   cf
 }
-
-
-
-
-
-
-
-
-
 
 ##' Estimate cFDR at a set of points using parametrisation (cFDR2 or cFDR2s)
 ##' 
@@ -1418,10 +1380,6 @@ cfdrx=function(p,q,pars,sub=1:length(p),adj=F) {
   out[sub]=(correct*raw_cfx(p,q))[sub]
 }
 
-
-
-
-
 ##' Estimate local cFDR at a set of points using parametrisation 
 ##' 
 ##' @title cfdrxl
@@ -1458,10 +1416,6 @@ cfdrxl=function(p,q,pars) {
   (pars[1]+pars[3])*num(zp,zq,pars)/denom(zp,zq,pars)
 }
 
-
-
-
-
 ##' Estimate cFDR at a set of points using kernel density estimate (cFDR3 or cFDR3s)
 ##' 
 ##' @title cfdry
@@ -1494,11 +1448,11 @@ cfdry=function(p,q,sub=1:length(p),exclude=NULL,adj=F,...) {
   
   zp=-qnorm(p/2); zq=-qnorm(q/2)
   zp[which(zp>mx)]=mx; zq[which(zq>my)]=my; w=which(is.finite(zp+zq)); 
-  kpq=kde2d(zp[inc],zq[inc],n=res,lims=c(0,mx,0,my),...)
+  kpq=MASS::kde2d(zp[inc],zq[inc],n=res,lims=c(0,mx,0,my),...)
   int2_kpq=t(apply(apply(kpq$z[res:1,res:1],2,cumsum),1,cumsum))[res:1,res:1]
   int_kpq=t(outer(int2_kpq[1,],rep(1,res)))
   kgrid=kpq; kgrid$z=int2_kpq/int_kpq
-  kdenom=interp.surface(kgrid,cbind(zp[sub],zq[sub]))
+  kdenom=fields::interp.surface(kgrid,cbind(zp[sub],zq[sub]))
   
   if (adj) {
     correction_num=1+ (ecdf(q[which(p>0.5)])(q)*length(q))
@@ -1509,10 +1463,6 @@ cfdry=function(p,q,sub=1:length(p),exclude=NULL,adj=F,...) {
   out=rep(1,length(p))
   out[sub]= (p*correct)[sub]/kdenom
 }
-
-
-
-
 
 ###########################################################################
 ## Incidental functions ###################################################
