@@ -1173,7 +1173,7 @@ fit.2g.parallel=function(P, pars = c(0.5, 1.5), weights = rep(1, min(length(Z),d
 
   cl<-makeCluster(ncores, type="FORK")
   setDefaultCluster(cl=cl)
-  zx = optimParallel(pars, function(p) l2(p), lower = c(1e-05, sigma_range[1]), 
+  zx = optimParallel::optimParallel(pars, function(p) l2(p), lower = c(1e-05, sigma_range[1]), 
     upper = c(1 - (1e-05), sigma_range[2]), method = "L-BFGS-B", control = list(factr = 10), 
     ...)
   setDefaultCluster(cl=NULL)
