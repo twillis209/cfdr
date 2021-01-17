@@ -4,9 +4,20 @@
 \alias{vlx}
 \title{vlx}
 \usage{
-vlx(p, q, pars, adj = T, indices = NULL, at = NULL, fold = NULL,
-  p_threshold = 0, nt = 5000, nv = 1000, scale = c("p", "z"),
-  closed = T)
+vlx(
+  p,
+  q,
+  pars,
+  adj = 1,
+  indices = NULL,
+  at = NULL,
+  fold = NULL,
+  p_threshold = 0,
+  nt = 5000,
+  nv = 1000,
+  scale = c("p", "z"),
+  closed = T
+)
 }
 \arguments{
 \item{p}{principal p-values}
@@ -54,10 +65,10 @@ zq=c(rnorm(n1p,sd=1), rnorm(n1q,sd=3),rnorm(n1pq,sd=3), rnorm(n-n1p-n1q-n1pq,sd=
 p=2*pnorm(-abs(zp)); q=2*pnorm(-abs(zq))
 fold_id=(1:n) \%\% 3
 
-# estimate parameters of underying dataset
+# estimate parameters of underlying dataset
 fit_pars=fit.4g(cbind(zp,zq))$pars
 
-# estimate parameters of underying dataset, removing fold 1
+# estimate parameters of underlying dataset, removing fold 1
 fit_pars_fold23=fit.4g(cbind(zp[which(fold_id!=1)],zq[which(fold_id!=1)]))$pars
 
 

@@ -4,9 +4,21 @@
 \alias{vlyl}
 \title{vlyl}
 \usage{
-vlyl(p, q, indices = NULL, at = NULL, mode = 0, fold = NULL,
-  p_threshold = 0, nt = 5000, nv = 1000, scale = c("p", "z"),
-  closed = T, bw = 1, ...)
+vlyl(
+  p,
+  q,
+  indices = NULL,
+  at = NULL,
+  mode = 0,
+  fold = NULL,
+  p_threshold = 0,
+  nt = 5000,
+  nv = 1000,
+  scale = c("p", "z"),
+  closed = T,
+  bw = 1,
+  ...
+)
 }
 \arguments{
 \item{p}{principal p-values}

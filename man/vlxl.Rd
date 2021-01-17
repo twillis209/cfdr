@@ -4,8 +4,19 @@
 \alias{vlxl}
 \title{vlxl}
 \usage{
-vlxl(p, q, pars, indices = NULL, at = NULL, p_threshold = 0,
-  nt = 5000, nv = 1000, scale = c("p", "z"), closed = T, up = T)
+vlxl(
+  p,
+  q,
+  pars,
+  indices = NULL,
+  at = NULL,
+  p_threshold = 0,
+  nt = 5000,
+  nv = 1000,
+  scale = c("p", "z"),
+  closed = T,
+  up = T
+)
 }
 \arguments{
 \item{p}{principal p-values}

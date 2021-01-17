@@ -15,67 +15,67 @@
 ## Functions ##############################################################
 ###########################################################################
 
-##' Return co-ordinates of L-regions for cFDR method, with or without estimation of Pr(H0|Pj<pj).
-##' 
-##' Parameter 'mode' defines the way in which L-curves are constructed. L-curves define a mapping 
-##' from the unit square [0,1]^2 onto the unit interval [0,1], and we consider the mapped values 
-##' of each point (p[i],q[i]). In this method (cFDR1) the mapping depends on the points used to 
-##' generate L, and if these points coincide with the points we are using the map for, the 
-##' behaviour of the map is very complicated. Parameter 'mode' governs the set of points used in 
-##' generating L-curves, and can be used to ensure that the points used to define curves L (and 
-##' hence the mapping) are distinct from the points the mapping is used on.
-##' 
-##' @title vl
-##' @param p principal p-values
-##' @param q conditional p-values
-##' @param adj adjust cFDR values and hence curves L using estimate of Pr(H0|Pj<pj)
-##' @param indices instead of at cfdr cutoffs, compute v(L) at indices of points. Overrides parameter at if set.
-##' @param at cfdr cutoff/cutoffs. Defaults to null
-##' @param mode determines set of variables to use for computing cFDR. Set to 0 to leave all of 'indices' in, 1 to remove each index one-by-one (only when computing the curve L for that value of (p,q)), 2 to remove all indices in variable 'fold' and compute curves L only using points not in 'fold'
-##' @param fold If mode=2, only compute L-curves using points not in 'fold'. 
-##' @param p_threshold if H0 is to be rejected automatically whenever p<p_threshold, include this in all regions L
-##' @param nt number of test points in x-direction, default 5000
-##' @param nv resolution for constructing L-curves, default 1000
-##' @param scale return curves on the p- or z- plane. Y values are equally spaced on the z-plane.
-##' @param closed determines whether curves are closed polygons encircling regions L (closed=T), or lines indicating the rightmost border of regions L
-##' @param verbose print progress if mode=1
-##' @export
-##' @importFrom stats qnorm pnorm ecdf approx   
-##' @author James Liley
-##' @return list containing elements x, y. Assuming n curves are calculated (where n=length(indices) or length(at)) and closed=T, x is a matrix of dimension n x (4+nv), y ix a vector of length (4+nv).
-##' @examples 
-##' # Generate standardised simulated dataset
-##' set.seed(1); n=10000; n1p=100; n1pq=100; n1q=100
-##' zp=c(rnorm(n1p,sd=3), rnorm(n1q,sd=1),rnorm(n1pq,sd=3), rnorm(n-n1p-n1q-n1pq,sd=1))
-##' zq=c(rnorm(n1p,sd=1), rnorm(n1q,sd=3),rnorm(n1pq,sd=3), rnorm(n-n1p-n1q-n1pq,sd=1))
-##' p=2*pnorm(-abs(zp)); q=2*pnorm(-abs(zq))
-##' fold_id=(1:n) %% 3
-##' 
-##' 
-##' # points to generate L-regions for
-##' example_indices=c(4262, 268,83,8203)
-##' 
-##' 
-##' 
-##' par(mfrow=c(1,3))
-##' 
-##' v1=vl(p,q,indices=example_indices,mode=0,nv=5000); 
-##' plot(p,q,cex=0.5,col="gray",xlim=c(0,0.001),ylim=c(0,1), main="All points in"); 
-##' for (i in 1:length(example_indices)) lines(v1$x[i,],v1$y); 
-##' for (i in 1:length(example_indices)) points(p[example_indices[i]],q[example_indices[i]],qh=16,col="blue")
-##' 
-##' # L1_{S-fold} example (fold left out; all points are in fold 2). Spikes disappear.
-##' v2=vl(p,q,indices=example_indices,mode=2,fold=which(fold_id==2)); 
-##' plot(p,q,cex=0.5,col="gray",xlim=c(0,0.001),ylim=c(0,1),main="Fold removed"); 
-##' for (i in 1:length(example_indices)) lines(v2$x[i,],v2$y); 
-##' for (i in 1:length(example_indices)) points(p[example_indices[i]],q[example_indices[i]],pch=16,col="blue")
-##' 
-##' # L1_{S-(p,q)} example (each point left out of points used to generate curve through that point). Spikes disappear.
-##' v3=vl(p,q,indices=example_indices,mode=1); 
-##' plot(p,q,cex=0.5,col="gray",xlim=c(0,0.001),ylim=c(0,1), main="Single point removed"); 
-##' for (i in 1:length(example_indices)) lines(v3$x[i,],v3$y); 
-##' for (i in 1:length(example_indices)) points(p[example_indices[i]],q[example_indices [i]],pch=16,col="blue")
-##'
+#' Return co-ordinates of L-regions for cFDR method, with or without estimation of Pr(H0|Pj<pj).
+#' 
+#' Parameter 'mode' defines the way in which L-curves are constructed. L-curves define a mapping 
+#' from the unit square [0,1]^2 onto the unit interval [0,1], and we consider the mapped values 
+#' of each point (p[i],q[i]). In this method (cFDR1) the mapping depends on the points used to 
+#' generate L, and if these points coincide with the points we are using the map for, the 
+#' behaviour of the map is very complicated. Parameter 'mode' governs the set of points used in 
+#' generating L-curves, and can be used to ensure that the points used to define curves L (and 
+#' hence the mapping) are distinct from the points the mapping is used on.
+#' 
+#' @title vl
+#' @param p principal p-values
+#' @param q conditional p-values
+#' @param adj adjust cFDR values and hence curves L using estimate of Pr(H0|Pj<pj)
+#' @param indices instead of at cfdr cutoffs, compute v(L) at indices of points. Overrides parameter at if set.
+#' @param at cfdr cutoff/cutoffs. Defaults to null
+#' @param mode determines set of variables to use for computing cFDR. Set to 0 to leave all of 'indices' in, 1 to remove each index one-by-one (only when computing the curve L for that value of (p,q)), 2 to remove all indices in variable 'fold' and compute curves L only using points not in 'fold'
+#' @param fold If mode=2, only compute L-curves using points not in 'fold'. 
+#' @param p_threshold if H0 is to be rejected automatically whenever p<p_threshold, include this in all regions L
+#' @param nt number of test points in x-direction, default 5000
+#' @param nv resolution for constructing L-curves, default 1000
+#' @param scale return curves on the p- or z- plane. Y values are equally spaced on the z-plane.
+#' @param closed determines whether curves are closed polygons encircling regions L (closed=T), or lines indicating the rightmost border of regions L
+#' @param verbose print progress if mode=1
+#' @export
+#' @importFrom stats qnorm pnorm ecdf approx   
+#' @author James Liley
+#' @return list containing elements x, y. Assuming n curves are calculated (where n=length(indices) or length(at)) and closed=T, x is a matrix of dimension n x (4+nv), y ix a vector of length (4+nv).
+#' @examples 
+#' # Generate standardised simulated dataset
+#' set.seed(1); n=10000; n1p=100; n1pq=100; n1q=100
+#' zp=c(rnorm(n1p,sd=3), rnorm(n1q,sd=1),rnorm(n1pq,sd=3), rnorm(n-n1p-n1q-n1pq,sd=1))
+#' zq=c(rnorm(n1p,sd=1), rnorm(n1q,sd=3),rnorm(n1pq,sd=3), rnorm(n-n1p-n1q-n1pq,sd=1))
+#' p=2*pnorm(-abs(zp)); q=2*pnorm(-abs(zq))
+#' fold_id=(1:n) %% 3
+#' 
+#' 
+#' # points to generate L-regions for
+#' example_indices=c(4262, 268,83,8203)
+#' 
+#' 
+#' 
+#' par(mfrow=c(1,3))
+#' 
+#' v1=vl(p,q,indices=example_indices,mode=0,nv=5000); 
+#' plot(p,q,cex=0.5,col="gray",xlim=c(0,0.001),ylim=c(0,1), main="All points in"); 
+#' for (i in 1:length(example_indices)) lines(v1$x[i,],v1$y); 
+#' for (i in 1:length(example_indices)) points(p[example_indices[i]],q[example_indices[i]],qh=16,col="blue")
+#' 
+#' # L1_{S-fold} example (fold left out; all points are in fold 2). Spikes disappear.
+#' v2=vl(p,q,indices=example_indices,mode=2,fold=which(fold_id==2)); 
+#' plot(p,q,cex=0.5,col="gray",xlim=c(0,0.001),ylim=c(0,1),main="Fold removed"); 
+#' for (i in 1:length(example_indices)) lines(v2$x[i,],v2$y); 
+#' for (i in 1:length(example_indices)) points(p[example_indices[i]],q[example_indices[i]],pch=16,col="blue")
+#' 
+#' # L1_{S-(p,q)} example (each point left out of points used to generate curve through that point). Spikes disappear.
+#' v3=vl(p,q,indices=example_indices,mode=1); 
+#' plot(p,q,cex=0.5,col="gray",xlim=c(0,0.001),ylim=c(0,1), main="Single point removed"); 
+#' for (i in 1:length(example_indices)) lines(v3$x[i,],v3$y); 
+#' for (i in 1:length(example_indices)) points(p[example_indices[i]],q[example_indices [i]],pch=16,col="blue")
+#'
 vl=function(p,q,adj=TRUE,indices=NULL,at=NULL,mode=0,fold=NULL,nt=5000, nv=1000, p_threshold=0, scale=c("p","z"), closed=TRUE,verbose=FALSE,gx=10^-5) {
 
   if(mode==2 & !is.null(indices) & !is.null(fold)) {
@@ -268,45 +268,45 @@ vl=function(p,q,adj=TRUE,indices=NULL,at=NULL,mode=0,fold=NULL,nt=5000, nv=1000,
   
 }
 
-##' Return co-ordinates of L-regions using 'oracle' method in which PDFs of ZP,ZQ|HP0 and ZP,ZQ
-##' are known
-##' 
-##' 
-##' @title vlo
-##' @param p principal p-values
-##' @param q conditional p-values
-##' @param f0 PDF of ZP,ZQ|HP0. Function of two variables. Can also be CDF if oracle cFDR is wanted instead of cfdr.
-##' @param f PDF of ZP,ZQ. Function of two variables. Can also be CDF if oracle cFDR is wanted instead of cfdr.
-##' @param indices instead of at cfdr cutoffs, compute v(L) at indices of points. Overrides parameter at if set.
-##' @param at cfdr cutoff/cutoffs. Defaults to null
-##' @param nt number of test points in x-direction, default 5000
-##' @param nv resolution for constructing L-curves, default 1000
-##' @param scale return curves on the p- or z- plane. Y values are equally spaced on the z-plane.
-##' @param closed determines whether curves are closed polygons encircling regions L (closed=T), or lines indicating the rightmost border of regions L
-##' @export
-##' @importFrom stats qnorm pnorm approx 
-##' @author James Liley
-##' @return list containing elements x, y. Assuming n curves are calculated (where n=length(indices) or length(at)) and closed=T, x is a matrix of dimension n x (4+nv), y ix a vector of length (4+nv).
-##' @examples 
-##' # Generate standardised simulated dataset
-##' set.seed(1); n=10000; n1p=100; n1pq=100; n1q=100
-##' zp=c(rnorm(n1p,sd=3), rnorm(n1q,sd=1),rnorm(n1pq,sd=3), rnorm(n-n1p-n1q-n1pq,sd=1))
-##' zq=c(rnorm(n1p,sd=1), rnorm(n1q,sd=3),rnorm(n1pq,sd=3), rnorm(n-n1p-n1q-n1pq,sd=1))
-##' p=2*pnorm(-abs(zp)); q=2*pnorm(-abs(zq))
-##' fold_id=(1:n) %% 3
-##' 
-##' # estimate parameters of underying dataset
-##' fit_pars=fit.4g(cbind(zp,zq))$pars
-##' 
-##' # points to generate L-regions for
-##' example_indices=c(4262, 268,83,8203)
-##' 
-##' 
-##' #v1=vlo(p,q,f0,f,indices=example_indices); 
-##' #plot(p,q,cex=0.5,col="gray",xlim=c(0,0.001),ylim=c(0,1), main="Oracle rejection regions"); 
-##' #for (i in 1:length(example_indices)) lines(v1$x[i,],v1$y); 
-##' #for (i in 1:length(example_indices)) points(p[example_indices[i]],q[example_indices[i]],qh=16,col="blue")
-##'
+#' Return co-ordinates of L-regions using 'oracle' method in which PDFs of ZP,ZQ|HP0 and ZP,ZQ
+#' are known
+#' 
+#' 
+#' @title vlo
+#' @param p principal p-values
+#' @param q conditional p-values
+#' @param f0 PDF of ZP,ZQ|HP0. Function of two variables. Can also be CDF if oracle cFDR is wanted instead of cfdr.
+#' @param f PDF of ZP,ZQ. Function of two variables. Can also be CDF if oracle cFDR is wanted instead of cfdr.
+#' @param indices instead of at cfdr cutoffs, compute v(L) at indices of points. Overrides parameter at if set.
+#' @param at cfdr cutoff/cutoffs. Defaults to null
+#' @param nt number of test points in x-direction, default 5000
+#' @param nv resolution for constructing L-curves, default 1000
+#' @param scale return curves on the p- or z- plane. Y values are equally spaced on the z-plane.
+#' @param closed determines whether curves are closed polygons encircling regions L (closed=T), or lines indicating the rightmost border of regions L
+#' @export
+#' @importFrom stats qnorm pnorm approx 
+#' @author James Liley
+#' @return list containing elements x, y. Assuming n curves are calculated (where n=length(indices) or length(at)) and closed=T, x is a matrix of dimension n x (4+nv), y ix a vector of length (4+nv).
+#' @examples 
+#' # Generate standardised simulated dataset
+#' set.seed(1); n=10000; n1p=100; n1pq=100; n1q=100
+#' zp=c(rnorm(n1p,sd=3), rnorm(n1q,sd=1),rnorm(n1pq,sd=3), rnorm(n-n1p-n1q-n1pq,sd=1))
+#' zq=c(rnorm(n1p,sd=1), rnorm(n1q,sd=3),rnorm(n1pq,sd=3), rnorm(n-n1p-n1q-n1pq,sd=1))
+#' p=2*pnorm(-abs(zp)); q=2*pnorm(-abs(zq))
+#' fold_id=(1:n) %% 3
+#' 
+#' # estimate parameters of underying dataset
+#' fit_pars=fit.4g(cbind(zp,zq))$pars
+#' 
+#' # points to generate L-regions for
+#' example_indices=c(4262, 268,83,8203)
+#' 
+#' 
+#' #v1=vlo(p,q,f0,f,indices=example_indices); 
+#' #plot(p,q,cex=0.5,col="gray",xlim=c(0,0.001),ylim=c(0,1), main="Oracle rejection regions"); 
+#' #for (i in 1:length(example_indices)) lines(v1$x[i,],v1$y); 
+#' #for (i in 1:length(example_indices)) points(p[example_indices[i]],q[example_indices[i]],qh=16,col="blue")
+#'
 vlo=function(p,q,f0,f,indices=NULL,at=NULL,nt=5000, nv=1000, scale=c("p","z"), closed=T) {
   #vlx=function(p,q,pars,adj=T,indices=NULL,at=NULL,fold=NULL,p_threshold=0,nt=5000, nv=1000,scale=c("p","z"),closed=T) {
   
@@ -360,63 +360,63 @@ vlo=function(p,q,f0,f,indices=NULL,at=NULL,nt=5000, nv=1000, scale=c("p","z"), c
   
 }
 
-##' Return co-ordinates of L-regions for cFDR method using four-groups method, with or without estimation
-##'  of Pr(H0|Pj<pj).
-##'
-##' Assumes (P,Q) follows a bivariate mixture-Gaussian distribution with four components, each centred at
-##' the origin and with covariance matrices I2, (s1^2,0; 0,1), (1,0; 0,t1^2), (s2^2,0; 0,t2^2). Components
-##' have weights pi0,pi1,pi2 and (1-pi0-pi1-pi2) respectively. Function fit.4g fits parameters to data.
-##' 
-##' This function does not have a 'mode' option (as for function vl) since the mapping from
-##' [0,1]^2 -> [0,1] defined by L-curves depends only on 'pars' in this case and not on observed p,q.
-##' 
-##' @title vlx
-##' @param p principal p-values
-##' @param q conditional p-values
-##' @param pars fitted parameters governing distribution of (P,Q). A seven element-vector: (pi0,pi1,pi2,s1,s2,t1,t2) respectively. See function description.
-##' @param adj adjust cFDR values and hence curves L using estimate of Pr(H0|Pj<pj). Set adj to 1 to do this from the empirical distribution of Zq, 2 to do it using the fitted parameters.
-##' @param indices compute v(L) at indices of points. Overrides parameter at if set.
-##' @param at cfdr cutoff/cutoffs. Defaults to null
-##' @param nt number of test points in x-direction, default 5000
-##' @param nv resolution for constructing L-curves, default 1000
-##' @param p_threshold if H0 is to be rejected automatically whenever p<p_threshold, include this in all regions L
-##' @param scale return curves on the p- or z- plane. Y values are equally spaced on the z-plane.
-##' @param closed determines whether curves are closed polygons encircling regions L (closed=T), or lines indicating the rightmost border of regions L
-##' @author James Liley
-##' @export
-##' @importFrom stats qnorm pnorm ecdf approx uniroot
-##' @return list containing elements x, y. Assuming n curves are calculated and closed=T (where n=length(indices) or length(at)), x is a matrix of dimension n x (4+nv), y ix a vector of length (4+nv).
-##' @examples 
-##' # Generate standardised simulated dataset
-##' set.seed(1); n=10000; n1p=100; n1pq=100; n1q=100
-##' zp=c(rnorm(n1p,sd=3), rnorm(n1q,sd=1),rnorm(n1pq,sd=3), rnorm(n-n1p-n1q-n1pq,sd=1))
-##' zq=c(rnorm(n1p,sd=1), rnorm(n1q,sd=3),rnorm(n1pq,sd=3), rnorm(n-n1p-n1q-n1pq,sd=1))
-##' p=2*pnorm(-abs(zp)); q=2*pnorm(-abs(zq))
-##' fold_id=(1:n) %% 3
-##' 
-##' # estimate parameters of underlying dataset
-##' fit_pars=fit.4g(cbind(zp,zq))$pars
-##' 
-##' # estimate parameters of underlying dataset, removing fold 1
-##' fit_pars_fold23=fit.4g(cbind(zp[which(fold_id!=1)],zq[which(fold_id!=1)]))$pars
-##' 
-##' 
-##' # points to generate L-regions for
-##' example_indices=c(4262, 268,83,8203)
-##' 
-##' par(mfrow=c(1,2))
-##' 
-##' v=vlx(p,q,pars=fit_pars,indices=example_indices); 
-##' plot(p,q,cex=0.5,col="gray",xlim=c(0,0.001),ylim=c(0,1), main="All points in"); 
-##' for (i in 1:length(example_indices)) lines(v$x[i,],v$y); 
-##' for (i in 1:length(example_indices)) points(p[example_indices[i]],q[example_indices[i]],pch=16,col="blue")
-##' 
-##' v2=vlx(p,q,pars=fit_pars_fold23,indices=example_indices); 
-##' plot(p,q,cex=0.5,col="gray",xlim=c(0,0.001),ylim=c(0,1), main="Fold removed"); 
-##' for (i in 1:length(example_indices)) lines(v2$x[i,],v2$y); 
-##' for (i in 1:length(example_indices)) points(p[example_indices[i]],q[example_indices[i]],pch=16,col="blue")
-##'
-##' 
+#' Return co-ordinates of L-regions for cFDR method using four-groups method, with or without estimation
+#'  of Pr(H0|Pj<pj).
+#'
+#' Assumes (P,Q) follows a bivariate mixture-Gaussian distribution with four components, each centred at
+#' the origin and with covariance matrices I2, (s1^2,0; 0,1), (1,0; 0,t1^2), (s2^2,0; 0,t2^2). Components
+#' have weights pi0,pi1,pi2 and (1-pi0-pi1-pi2) respectively. Function fit.4g fits parameters to data.
+#' 
+#' This function does not have a 'mode' option (as for function vl) since the mapping from
+#' [0,1]^2 -> [0,1] defined by L-curves depends only on 'pars' in this case and not on observed p,q.
+#' 
+#' @title vlx
+#' @param p principal p-values
+#' @param q conditional p-values
+#' @param pars fitted parameters governing distribution of (P,Q). A seven element-vector: (pi0,pi1,pi2,s1,s2,t1,t2) respectively. See function description.
+#' @param adj adjust cFDR values and hence curves L using estimate of Pr(H0|Pj<pj). Set adj to 1 to do this from the empirical distribution of Zq, 2 to do it using the fitted parameters.
+#' @param indices compute v(L) at indices of points. Overrides parameter at if set.
+#' @param at cfdr cutoff/cutoffs. Defaults to null
+#' @param nt number of test points in x-direction, default 5000
+#' @param nv resolution for constructing L-curves, default 1000
+#' @param p_threshold if H0 is to be rejected automatically whenever p<p_threshold, include this in all regions L
+#' @param scale return curves on the p- or z- plane. Y values are equally spaced on the z-plane.
+#' @param closed determines whether curves are closed polygons encircling regions L (closed=T), or lines indicating the rightmost border of regions L
+#' @author James Liley
+#' @export
+#' @importFrom stats qnorm pnorm ecdf approx uniroot
+#' @return list containing elements x, y. Assuming n curves are calculated and closed=T (where n=length(indices) or length(at)), x is a matrix of dimension n x (4+nv), y ix a vector of length (4+nv).
+#' @examples 
+#' # Generate standardised simulated dataset
+#' set.seed(1); n=10000; n1p=100; n1pq=100; n1q=100
+#' zp=c(rnorm(n1p,sd=3), rnorm(n1q,sd=1),rnorm(n1pq,sd=3), rnorm(n-n1p-n1q-n1pq,sd=1))
+#' zq=c(rnorm(n1p,sd=1), rnorm(n1q,sd=3),rnorm(n1pq,sd=3), rnorm(n-n1p-n1q-n1pq,sd=1))
+#' p=2*pnorm(-abs(zp)); q=2*pnorm(-abs(zq))
+#' fold_id=(1:n) %% 3
+#' 
+#' # estimate parameters of underlying dataset
+#' fit_pars=fit.4g(cbind(zp,zq))$pars
+#' 
+#' # estimate parameters of underlying dataset, removing fold 1
+#' fit_pars_fold23=fit.4g(cbind(zp[which(fold_id!=1)],zq[which(fold_id!=1)]))$pars
+#' 
+#' 
+#' # points to generate L-regions for
+#' example_indices=c(4262, 268,83,8203)
+#' 
+#' par(mfrow=c(1,2))
+#' 
+#' v=vlx(p,q,pars=fit_pars,indices=example_indices); 
+#' plot(p,q,cex=0.5,col="gray",xlim=c(0,0.001),ylim=c(0,1), main="All points in"); 
+#' for (i in 1:length(example_indices)) lines(v$x[i,],v$y); 
+#' for (i in 1:length(example_indices)) points(p[example_indices[i]],q[example_indices[i]],pch=16,col="blue")
+#' 
+#' v2=vlx(p,q,pars=fit_pars_fold23,indices=example_indices); 
+#' plot(p,q,cex=0.5,col="gray",xlim=c(0,0.001),ylim=c(0,1), main="Fold removed"); 
+#' for (i in 1:length(example_indices)) lines(v2$x[i,],v2$y); 
+#' for (i in 1:length(example_indices)) points(p[example_indices[i]],q[example_indices[i]],pch=16,col="blue")
+#'
+#' 
 vlx=function(p,q,pars,adj=1,indices=NULL,at=NULL,fold=NULL,p_threshold=0,nt=5000, nv=1000,scale=c("p","z"),closed=T) {
   
   zp=-qnorm(p/2); zq=-qnorm(q/2)
@@ -503,61 +503,61 @@ vlx=function(p,q,pars,adj=1,indices=NULL,at=NULL,fold=NULL,p_threshold=0,nt=5000
   
 }
 
-##' Return co-ordinates of L-regions for cFDR method using local four-groups method. Automatically includes an estimate of Pr(H0|Q<q).
-##'
-##' Assumes (P,Q) follows a bivariate mixture-Gaussian distribution with four components, each centred at
-##' the origin and with covariance matrices I2, (s1^2,0; 0,1), (1,0; 0,t1^2), (s2^2,0; 0,t2^2). Components
-##' have weights pi0,pi1,pi2 and (1-pi0-pi1-pi2) respectively. Function fit.4g fits parameters to data.
-##' 
-##' This function does not have a 'mode' option (as for function vl) since the mapping from
-##' [0,1]^2 -> [0,1] defined by L-curves depends only on 'pars' in this case and not on observed p,q.
-##' 
-##' @title vlxl
-##' @param p principal p-values
-##' @param q conditional p-values
-##' @param pars fitted parameters governing distribution of (P,Q). A seven element-vector: (pi0,pi1,pi2,s1,s2,t1,t2) respectively. See function description.
-##' @param indices compute v(L) at indices of points. Overrides parameter at if set.
-##' @param at cfdr cutoff/cutoffs. Defaults to null
-##' @param nt number of test points in x-direction, default 5000
-##' @param nv resolution for constructing L-curves, default 1000
-##' @param p_threshold if H0 is to be rejected automatically whenever p<p_threshold, include this in all regions L
-##' @param scale return curves on the p- or z- plane. Y values are equally spaced on the z-plane.
-##' @param closed determines whether curves are closed polygons encircling regions L (closed=T), or lines indicating the rightmost border of regions L
-##' @author James Liley
-##' @export
-##' @importFrom stats qnorm dnorm pnorm approx
-##' @return list containing elements x, y. Assuming n curves are calculated and closed=T (where n=length(indices) or length(at)), x is a matrix of dimension n x (4+nv), y ix a vector of length (4+nv).
-##' @examples 
-##' # Generate standardised simulated dataset
-##' set.seed(1); n=10000; n1p=100; n1pq=100; n1q=100
-##' zp=c(rnorm(n1p,sd=3), rnorm(n1q,sd=1),rnorm(n1pq,sd=3), rnorm(n-n1p-n1q-n1pq,sd=1))
-##' zq=c(rnorm(n1p,sd=1), rnorm(n1q,sd=3),rnorm(n1pq,sd=3), rnorm(n-n1p-n1q-n1pq,sd=1))
-##' p=2*pnorm(-abs(zp)); q=2*pnorm(-abs(zq))
-##' fold_id=(1:n) %% 3
-##' 
-##' # estimate parameters of underying dataset
-##' fit_pars=fit.4g(cbind(zp,zq))$pars
-##' 
-##' # estimate parameters of underying dataset, removing fold 1
-##' fit_pars_fold23=fit.4g(cbind(zp[which(fold_id!=1)],zq[which(fold_id!=1)]))$pars
-##' 
-##' 
-##' # points to generate L-regions for
-##' example_indices=c(4262, 268,83,8203)
-##' 
-##' par(mfrow=c(1,2))
-##' 
-##' v=vlx(p,q,pars=fit_pars,indices=example_indices); 
-##' plot(p,q,cex=0.5,col="gray",xlim=c(0,0.001),ylim=c(0,1), main="All points in"); 
-##' for (i in 1:length(example_indices)) lines(v$x[i,],v$y); 
-##' for (i in 1:length(example_indices)) points(p[example_indices[i]],q[example_indices[i]],pch=16,col="blue")
-##' 
-##' v2=vlx(p,q,pars=fit_pars_fold23,indices=example_indices); 
-##' plot(p,q,cex=0.5,col="gray",xlim=c(0,0.001),ylim=c(0,1), main="Fold removed"); 
-##' for (i in 1:length(example_indices)) lines(v2$x[i,],v2$y); 
-##' for (i in 1:length(example_indices)) points(p[example_indices[i]],q[example_indices[i]],pch=16,col="blue")
-##'
-##' 
+#' Return co-ordinates of L-regions for cFDR method using local four-groups method. Automatically includes an estimate of Pr(H0|Q<q).
+#'
+#' Assumes (P,Q) follows a bivariate mixture-Gaussian distribution with four components, each centred at
+#' the origin and with covariance matrices I2, (s1^2,0; 0,1), (1,0; 0,t1^2), (s2^2,0; 0,t2^2). Components
+#' have weights pi0,pi1,pi2 and (1-pi0-pi1-pi2) respectively. Function fit.4g fits parameters to data.
+#' 
+#' This function does not have a 'mode' option (as for function vl) since the mapping from
+#' [0,1]^2 -> [0,1] defined by L-curves depends only on 'pars' in this case and not on observed p,q.
+#' 
+#' @title vlxl
+#' @param p principal p-values
+#' @param q conditional p-values
+#' @param pars fitted parameters governing distribution of (P,Q). A seven element-vector: (pi0,pi1,pi2,s1,s2,t1,t2) respectively. See function description.
+#' @param indices compute v(L) at indices of points. Overrides parameter at if set.
+#' @param at cfdr cutoff/cutoffs. Defaults to null
+#' @param nt number of test points in x-direction, default 5000
+#' @param nv resolution for constructing L-curves, default 1000
+#' @param p_threshold if H0 is to be rejected automatically whenever p<p_threshold, include this in all regions L
+#' @param scale return curves on the p- or z- plane. Y values are equally spaced on the z-plane.
+#' @param closed determines whether curves are closed polygons encircling regions L (closed=T), or lines indicating the rightmost border of regions L
+#' @author James Liley
+#' @export
+#' @importFrom stats qnorm dnorm pnorm approx
+#' @return list containing elements x, y. Assuming n curves are calculated and closed=T (where n=length(indices) or length(at)), x is a matrix of dimension n x (4+nv), y ix a vector of length (4+nv).
+#' @examples 
+#' # Generate standardised simulated dataset
+#' set.seed(1); n=10000; n1p=100; n1pq=100; n1q=100
+#' zp=c(rnorm(n1p,sd=3), rnorm(n1q,sd=1),rnorm(n1pq,sd=3), rnorm(n-n1p-n1q-n1pq,sd=1))
+#' zq=c(rnorm(n1p,sd=1), rnorm(n1q,sd=3),rnorm(n1pq,sd=3), rnorm(n-n1p-n1q-n1pq,sd=1))
+#' p=2*pnorm(-abs(zp)); q=2*pnorm(-abs(zq))
+#' fold_id=(1:n) %% 3
+#' 
+#' # estimate parameters of underying dataset
+#' fit_pars=fit.4g(cbind(zp,zq))$pars
+#' 
+#' # estimate parameters of underying dataset, removing fold 1
+#' fit_pars_fold23=fit.4g(cbind(zp[which(fold_id!=1)],zq[which(fold_id!=1)]))$pars
+#' 
+#' 
+#' # points to generate L-regions for
+#' example_indices=c(4262, 268,83,8203)
+#' 
+#' par(mfrow=c(1,2))
+#' 
+#' v=vlx(p,q,pars=fit_pars,indices=example_indices); 
+#' plot(p,q,cex=0.5,col="gray",xlim=c(0,0.001),ylim=c(0,1), main="All points in"); 
+#' for (i in 1:length(example_indices)) lines(v$x[i,],v$y); 
+#' for (i in 1:length(example_indices)) points(p[example_indices[i]],q[example_indices[i]],pch=16,col="blue")
+#' 
+#' v2=vlx(p,q,pars=fit_pars_fold23,indices=example_indices); 
+#' plot(p,q,cex=0.5,col="gray",xlim=c(0,0.001),ylim=c(0,1), main="Fold removed"); 
+#' for (i in 1:length(example_indices)) lines(v2$x[i,],v2$y); 
+#' for (i in 1:length(example_indices)) points(p[example_indices[i]],q[example_indices[i]],pch=16,col="blue")
+#'
+#' 
 vlxl=function(p,q,pars,indices=NULL,at=NULL,p_threshold=0,nt=5000, nv=1000,scale=c("p","z"),closed=T,up=T) {
   
   zp=-qnorm(p/2); zq=-qnorm(q/2)
@@ -619,53 +619,53 @@ vlxl=function(p,q,pars,indices=NULL,at=NULL,p_threshold=0,nt=5000, nv=1000,scale
   
 }
 
-##' Return co-ordinates of L-regions for cFDR method using kernel density method, with or without estimation
-##'  of Pr(H0|Pj<pj).
-##'
-##' Estimates empirical distribution of (P,Q) by fitting a kernel density estimate to observed values.
-##' 
-##' 
-##' @title vly
-##' @param p principal p-values
-##' @param q conditional p-values
-##' @param adj adjust cFDR values and hence curves L using estimate of Pr(H0|Pj<pj)
-##' @param indices compute v(L) at indices of points. Overrides parameter at if set.
-##' @param at cfdr cutoff/cutoffs. Defaults to null
-##' @param mode set to 0 to leave all of 'indices' in, 1 (NOT CURRENTLY SUPPORTED) to remove each index only when computing L at that point, 2 to remove all of 'indices' from p,q
-##' @param fold If mode=2, only compute L-curves using points not in 'fold'. 
-##' @param p_threshold if H0 is to be rejected automatically whenever p<p_threshold, include this in all regions L
-##' @param nt number of test points in x-direction, default 5000
-##' @param nv resolution for constructing L-curves, default 1000
-##' @param scale return curves on the p- or z- plane. Y values are equally spaced on the z-plane.
-##' @param closed determines whether curves are closed polygons encircling regions L (closed=T), or lines indicating the rightmost border of regions L
-##' @param ... other parameters passed to function kde2d. Can be used to set a non-Gaussian kernel.
-##' @author James Liley
-##' @export
-##' @importFrom stats qnorm pnorm ecdf approx 
-##' @return list containing elements x, y. Assuming n curves are calculated and closed=T (where n=length(indices) or length(at)), x is a matrix of dimension n x (4+nv), y ix a vector of length (4+nv).
-##' @examples 
-##' # Generate standardised simulated dataset
-##' set.seed(1); n=10000; n1p=100; n1pq=100; n1q=100
-##' zp=c(rnorm(n1p,sd=3), rnorm(n1q,sd=1),rnorm(n1pq,sd=3), rnorm(n-n1p-n1q-n1pq,sd=1))
-##' zq=c(rnorm(n1p,sd=1), rnorm(n1q,sd=3),rnorm(n1pq,sd=3), rnorm(n-n1p-n1q-n1pq,sd=1))
-##' p=2*pnorm(-abs(zp)); q=2*pnorm(-abs(zq))
-##' fold_id=(1:n) %% 3
-##' 
-##' # points to generate L-regions for
-##' example_indices=c(4262, 268,83,8203) #c(164,23,74)
-##' 
-##' par(mfrow=c(1,2))
-##' 
-##' v1=vly(p,q,indices=example_indices,mode=0); 
-##' plot(p,q,cex=0.5,col="gray",xlim=c(0,0.001),ylim=c(0,1), main="All points in"); 
-##' for (i in 1:length(example_indices)) lines(v1$x[i,],v1$y); 
-##' for (i in 1:length(example_indices)) points(p[example_indices[i]],q[example_indices[i]],pch=16,col="blue")
-##' 
-##' v2=vly(p,q,indices=example_indices,mode=2,fold=which(fold_id==1)); 
-##' plot(p,q,cex=0.5,col="gray",xlim=c(0,0.001),ylim=c(0,1), main="Fold removed"); 
-##' for (i in 1:length(example_indices)) lines(v2$x[i,],v2$y); 
-##' for (i in 1:length(example_indices)) points(p[example_indices[i]],q[example_indices[i]],pch=16,col="blue")
-##' 
+#' Return co-ordinates of L-regions for cFDR method using kernel density method, with or without estimation
+#'  of Pr(H0|Pj<pj).
+#'
+#' Estimates empirical distribution of (P,Q) by fitting a kernel density estimate to observed values.
+#' 
+#' 
+#' @title vly
+#' @param p principal p-values
+#' @param q conditional p-values
+#' @param adj adjust cFDR values and hence curves L using estimate of Pr(H0|Pj<pj)
+#' @param indices compute v(L) at indices of points. Overrides parameter at if set.
+#' @param at cfdr cutoff/cutoffs. Defaults to null
+#' @param mode set to 0 to leave all of 'indices' in, 1 (NOT CURRENTLY SUPPORTED) to remove each index only when computing L at that point, 2 to remove all of 'indices' from p,q
+#' @param fold If mode=2, only compute L-curves using points not in 'fold'. 
+#' @param p_threshold if H0 is to be rejected automatically whenever p<p_threshold, include this in all regions L
+#' @param nt number of test points in x-direction, default 5000
+#' @param nv resolution for constructing L-curves, default 1000
+#' @param scale return curves on the p- or z- plane. Y values are equally spaced on the z-plane.
+#' @param closed determines whether curves are closed polygons encircling regions L (closed=T), or lines indicating the rightmost border of regions L
+#' @param ... other parameters passed to function kde2d. Can be used to set a non-Gaussian kernel.
+#' @author James Liley
+#' @export
+#' @importFrom stats qnorm pnorm ecdf approx 
+#' @return list containing elements x, y. Assuming n curves are calculated and closed=T (where n=length(indices) or length(at)), x is a matrix of dimension n x (4+nv), y ix a vector of length (4+nv).
+#' @examples 
+#' # Generate standardised simulated dataset
+#' set.seed(1); n=10000; n1p=100; n1pq=100; n1q=100
+#' zp=c(rnorm(n1p,sd=3), rnorm(n1q,sd=1),rnorm(n1pq,sd=3), rnorm(n-n1p-n1q-n1pq,sd=1))
+#' zq=c(rnorm(n1p,sd=1), rnorm(n1q,sd=3),rnorm(n1pq,sd=3), rnorm(n-n1p-n1q-n1pq,sd=1))
+#' p=2*pnorm(-abs(zp)); q=2*pnorm(-abs(zq))
+#' fold_id=(1:n) %% 3
+#' 
+#' # points to generate L-regions for
+#' example_indices=c(4262, 268,83,8203) #c(164,23,74)
+#' 
+#' par(mfrow=c(1,2))
+#' 
+#' v1=vly(p,q,indices=example_indices,mode=0); 
+#' plot(p,q,cex=0.5,col="gray",xlim=c(0,0.001),ylim=c(0,1), main="All points in"); 
+#' for (i in 1:length(example_indices)) lines(v1$x[i,],v1$y); 
+#' for (i in 1:length(example_indices)) points(p[example_indices[i]],q[example_indices[i]],pch=16,col="blue")
+#' 
+#' v2=vly(p,q,indices=example_indices,mode=2,fold=which(fold_id==1)); 
+#' plot(p,q,cex=0.5,col="gray",xlim=c(0,0.001),ylim=c(0,1), main="Fold removed"); 
+#' for (i in 1:length(example_indices)) lines(v2$x[i,],v2$y); 
+#' for (i in 1:length(example_indices)) points(p[example_indices[i]],q[example_indices[i]],pch=16,col="blue")
+#' 
 vly=function(p,q,adj=T,indices=NULL,at=NULL,mode=0,fold=NULL,p_threshold=0,nt=5000,nv=1000,scale=c("p","z"),closed=T,...) {
   
   res=200
@@ -743,64 +743,60 @@ vly=function(p,q,adj=T,indices=NULL,at=NULL,mode=0,fold=NULL,p_threshold=0,nt=50
   
 }
 
-
-
-
-
-##' Return co-ordinates of L-regions for local cFDR using KDEs. Automatically includes an estimate of 
-##' Pr(H0|Q<q).
-##'
-##' Estimates empirical distribution of (P,Q) by fitting a kernel density estimate to observed values.
-##'
-##' @title vlyl
-##' @param p principal p-values
-##' @param q conditional p-values
-##' @param adj adjust cFDR values and hence curves L using estimate of Pr(H0|Pj<pj)
-##' @param indices compute v(L) at indices of points. Overrides parameter at if set.
-##' @param at cfdr cutoff/cutoffs. Defaults to null
-##' @param mode set to 0 to leave all of 'indices' in, 1 (NOT CURRENTLY SUPPORTED) to remove each index only when computing L at that point, 2 to remove all of 'indices' from p,q
-##' @param fold If mode=2, only compute L-curves using points not in 'fold'. 
-##' @param p_threshold if H0 is to be rejected automatically whenever p<p_threshold, include this in all regions L
-##' @param nt number of test points in x-direction, default 5000
-##' @param nv resolution for constructing L-curves, default 1000
-##' @param scale return curves on the p- or z- plane. Y values are equally spaced on the z-plane.
-##' @param closed determines whether curves are closed polygons encircling regions L (closed=T), or lines indicating the rightmost border of regions L
-##' @param ... other parameters passed to function kde2d. Can be used to set a non-Gaussian kernel.
-##' @author James Liley
-##' @export
-##' @importFrom stats qnorm dnorm density pnorm approx 
-##' @return list containing elements x, y. Assuming n curves are calculated and closed=T (where n=length(indices) or length(at)), x is a matrix of dimension n x (4+nv), y ix a vector of length (4+nv).
-##' @examples 
-##' # Generate standardised simulated dataset
-##' set.seed(1); n=10000; n1p=100; n1pq=100; n1q=100
-##' zp=c(rnorm(n1p,sd=3), rnorm(n1q,sd=1),rnorm(n1pq,sd=3), rnorm(n-n1p-n1q-n1pq,sd=1))
-##' zq=c(rnorm(n1p,sd=1), rnorm(n1q,sd=3),rnorm(n1pq,sd=3), rnorm(n-n1p-n1q-n1pq,sd=1))
-##' p=2*pnorm(-abs(zp)); q=2*pnorm(-abs(zq))
-##' fold_id=(1:n) %% 3
-##' 
-##' # estimate parameters of underying dataset
-##' fit_pars=fit.4g(cbind(zp,zq))$pars
-##' 
-##' # estimate parameters of underying dataset, removing fold 1
-##' fit_pars_fold23=fit.4g(cbind(zp[which(fold_id!=1)],zq[which(fold_id!=1)]))$pars
-##' 
-##' 
-##' # points to generate L-regions for
-##' example_indices=c(4262, 268,83,8203)
-##' 
-##' par(mfrow=c(1,2))
-##' 
-##' v=vlx(p,q,pars=fit_pars,indices=example_indices); 
-##' plot(p,q,cex=0.5,col="gray",xlim=c(0,0.001),ylim=c(0,1), main="All points in"); 
-##' for (i in 1:length(example_indices)) lines(v$x[i,],v$y); 
-##' for (i in 1:length(example_indices)) points(p[example_indices[i]],q[example_indices[i]],pch=16,col="blue")
-##' 
-##' v2=vlx(p,q,pars=fit_pars_fold23,indices=example_indices); 
-##' plot(p,q,cex=0.5,col="gray",xlim=c(0,0.001),ylim=c(0,1), main="Fold removed"); 
-##' for (i in 1:length(example_indices)) lines(v2$x[i,],v2$y); 
-##' for (i in 1:length(example_indices)) points(p[example_indices[i]],q[example_indices[i]],pch=16,col="blue")
-##'
-##' 
+#' Return co-ordinates of L-regions for local cFDR using KDEs. Automatically includes an estimate of 
+#' Pr(H0|Q<q).
+#'
+#' Estimates empirical distribution of (P,Q) by fitting a kernel density estimate to observed values.
+#'
+#' @title vlyl
+#' @param p principal p-values
+#' @param q conditional p-values
+#' @param adj adjust cFDR values and hence curves L using estimate of Pr(H0|Pj<pj)
+#' @param indices compute v(L) at indices of points. Overrides parameter at if set.
+#' @param at cfdr cutoff/cutoffs. Defaults to null
+#' @param mode set to 0 to leave all of 'indices' in, 1 (NOT CURRENTLY SUPPORTED) to remove each index only when computing L at that point, 2 to remove all of 'indices' from p,q
+#' @param fold If mode=2, only compute L-curves using points not in 'fold'. 
+#' @param p_threshold if H0 is to be rejected automatically whenever p<p_threshold, include this in all regions L
+#' @param nt number of test points in x-direction, default 5000
+#' @param nv resolution for constructing L-curves, default 1000
+#' @param scale return curves on the p- or z- plane. Y values are equally spaced on the z-plane.
+#' @param closed determines whether curves are closed polygons encircling regions L (closed=T), or lines indicating the rightmost border of regions L
+#' @param ... other parameters passed to function kde2d. Can be used to set a non-Gaussian kernel.
+#' @author James Liley
+#' @export
+#' @importFrom stats qnorm dnorm density pnorm approx 
+#' @return list containing elements x, y. Assuming n curves are calculated and closed=T (where n=length(indices) or length(at)), x is a matrix of dimension n x (4+nv), y ix a vector of length (4+nv).
+#' @examples 
+#' # Generate standardised simulated dataset
+#' set.seed(1); n=10000; n1p=100; n1pq=100; n1q=100
+#' zp=c(rnorm(n1p,sd=3), rnorm(n1q,sd=1),rnorm(n1pq,sd=3), rnorm(n-n1p-n1q-n1pq,sd=1))
+#' zq=c(rnorm(n1p,sd=1), rnorm(n1q,sd=3),rnorm(n1pq,sd=3), rnorm(n-n1p-n1q-n1pq,sd=1))
+#' p=2*pnorm(-abs(zp)); q=2*pnorm(-abs(zq))
+#' fold_id=(1:n) %% 3
+#' 
+#' # estimate parameters of underying dataset
+#' fit_pars=fit.4g(cbind(zp,zq))$pars
+#' 
+#' # estimate parameters of underying dataset, removing fold 1
+#' fit_pars_fold23=fit.4g(cbind(zp[which(fold_id!=1)],zq[which(fold_id!=1)]))$pars
+#' 
+#' 
+#' # points to generate L-regions for
+#' example_indices=c(4262, 268,83,8203)
+#' 
+#' par(mfrow=c(1,2))
+#' 
+#' v=vlx(p,q,pars=fit_pars,indices=example_indices); 
+#' plot(p,q,cex=0.5,col="gray",xlim=c(0,0.001),ylim=c(0,1), main="All points in"); 
+#' for (i in 1:length(example_indices)) lines(v$x[i,],v$y); 
+#' for (i in 1:length(example_indices)) points(p[example_indices[i]],q[example_indices[i]],pch=16,col="blue")
+#' 
+#' v2=vlx(p,q,pars=fit_pars_fold23,indices=example_indices); 
+#' plot(p,q,cex=0.5,col="gray",xlim=c(0,0.001),ylim=c(0,1), main="Fold removed"); 
+#' for (i in 1:length(example_indices)) lines(v2$x[i,],v2$y); 
+#' for (i in 1:length(example_indices)) points(p[example_indices[i]],q[example_indices[i]],pch=16,col="blue")
+#'
+#' 
 vlyl=function(p,q,indices=NULL,at=NULL,mode=0,fold=NULL,p_threshold=0,nt=5000,nv=1000,scale=c("p","z"),closed=T,bw=1,...) {
   
   res=200
@@ -877,63 +873,60 @@ vlyl=function(p,q,indices=NULL,at=NULL,mode=0,fold=NULL,p_threshold=0,nt=5000,nv
   
 }
 
-
-
-
-##' Integrate over L (general). Assumes Zq| H^p=0 has a mixture distribution, being N(0,1) with probability pi0, and taking some other distribution distx with probability (1-pi0)
-##' 
-##' We generally assume that distx is a Gaussian centred at 0. 
-##'
-##' @title il
-##' @param X either output from functions vl, vlx, or vly, or matrix nk x nc of x-co-ordinates (Z-plane) of regions to integrate over. X[k,] is the set of co-ordinates for the kth region.
-##' @param Y vector of length nc of y-co-ordinates to integrate over. Assumed to be constant for all columns of X. Leave as NULL if X is output from vl, vlx, or vly.
-##' @param pi0_null parameter for distribution of Q|H^p=0. Can be a vector of parameters of length np.
-##' @param sigma_null scale parameter for distribution of Q|H^p=0. Can be a vector of parameters
-##' @param rho_null optional parameter governing covariance between Z scores under the null; for instance, from shared controls
-##' @param distx distribution type for distribution of Q|H^p=0. Can be 1,2,or 3 (symbolising normal, t (3df) and Cauchy respectively) or a text string which can be appended to 'd' to get PDF and 'p' to get CDF
-##' @param ... additional parameters passed to CDF and PDF functions, ie df=3
-##' @author James Liley
-##' @export
-##' @importFrom stats qnorm dnorm dt dcauchy pnorm pt pcauchy
-##' @return matrix of dimension nk x np; [k,p]th element is the integral for the kth region using the pth parameter values.
-##' @examples 
-##' # Generate standardised simulated dataset
-##' set.seed(1); n=10000; n1p=100; n1pq=100; n1q=100
-##' zp=c(rnorm(n1p,sd=2), rnorm(n1q,sd=1),rnorm(n1pq,sd=2), rnorm(n-n1p-n1q-n1pq,sd=1))
-##' zq=c(rnorm(n1p,sd=1), rnorm(n1q,sd=2),rnorm(n1pq,sd=2), rnorm(n-n1p-n1q-n1pq,sd=1))
-##' p=2*pnorm(-abs(zp)); q=2*pnorm(-abs(zq))
-##'
-##' # Generate some L regions
-##' example_indices=c(70,67,226)
-##' v1=vl(p,q,indices=example_indices,mode=0); 
-##' 
-##' 
-##' # The true distribution of Zq|H^p=0 is N(0,1) with weight n1q/(n-n1p-n1pq), and N(0,2^2) with weight 1- (n1q/(n-n1p-n1pq))
-##' true_q0_pars=c(n1q/(n-n1p-n1pq),2)
-##' 
-##' # Estimate parameters:
-##' est_q0_pars=fit.2g(q[which(p>0.5)])$pars
-##' 
-##' ############### Integrals ################
-##' int_true=il(v1,pi0_null=true_q0_pars[1],sigma_null=true_q0_pars[2],distx="norm")
-##' int_est=il(v1,pi0_null=est_q0_pars[1],sigma_null=est_q0_pars[2],distx="norm")
-##' ##########################################
-##'
-##' ############# Check integral #############
-##' # Sample values zp0,zq0 and p0,q0 following distribution of Zp,Zq|H^p=0
-##' nsc=1000000 # generate nsc sample values
-##' n0=round(nsc*true_q0_pars[1]); n1=nsc-n0
-##' zp0=rnorm(nsc,sd=1)
-##' zq0=c(rnorm(n0,sd=1), rnorm(n1,sd=true_q0_pars[2]))
-##' p0=2*pnorm(-abs(zp0)); q0=2*pnorm(-abs(zq0))
-##' 
-##' 
-##' # Proportion of values p0,q0 falling in region with co-ordinates v1$x[2,],v1$y
-##' length(which(mgcv::in.out(cbind(v1$x[2,],v1$y),cbind(p0,q0))))/nsc
-##' 
-##' # Value of integral over the region
-##' int_true[2] 
-##' ##########################################
+#' Integrate over L (general). Assumes Zq| H^p=0 has a mixture distribution, being N(0,1) with probability pi0, and taking some other distribution distx with probability (1-pi0)
+#' 
+#' We generally assume that distx is a Gaussian centred at 0. 
+#'
+#' @title il
+#' @param X either output from functions vl, vlx, or vly, or matrix nk x nc of x-co-ordinates (Z-plane) of regions to integrate over. X[k,] is the set of co-ordinates for the kth region.
+#' @param Y vector of length nc of y-co-ordinates to integrate over. Assumed to be constant for all columns of X. Leave as NULL if X is output from vl, vlx, or vly.
+#' @param pi0_null parameter for distribution of Q|H^p=0. Can be a vector of parameters of length np.
+#' @param sigma_null scale parameter for distribution of Q|H^p=0. Can be a vector of parameters
+#' @param rho_null optional parameter governing covariance between Z scores under the null; for instance, from shared controls
+#' @param distx distribution type for distribution of Q|H^p=0. Can be 1,2,or 3 (symbolising normal, t (3df) and Cauchy respectively) or a text string which can be appended to 'd' to get PDF and 'p' to get CDF
+#' @param ... additional parameters passed to CDF and PDF functions, ie df=3
+#' @author James Liley
+#' @export
+#' @importFrom stats qnorm dnorm dt dcauchy pnorm pt pcauchy
+#' @return matrix of dimension nk x np; [k,p]th element is the integral for the kth region using the pth parameter values.
+#' @examples 
+#' # Generate standardised simulated dataset
+#' set.seed(1); n=10000; n1p=100; n1pq=100; n1q=100
+#' zp=c(rnorm(n1p,sd=2), rnorm(n1q,sd=1),rnorm(n1pq,sd=2), rnorm(n-n1p-n1q-n1pq,sd=1))
+#' zq=c(rnorm(n1p,sd=1), rnorm(n1q,sd=2),rnorm(n1pq,sd=2), rnorm(n-n1p-n1q-n1pq,sd=1))
+#' p=2*pnorm(-abs(zp)); q=2*pnorm(-abs(zq))
+#'
+#' # Generate some L regions
+#' example_indices=c(70,67,226)
+#' v1=vl(p,q,indices=example_indices,mode=0); 
+#' 
+#' 
+#' # The true distribution of Zq|H^p=0 is N(0,1) with weight n1q/(n-n1p-n1pq), and N(0,2^2) with weight 1- (n1q/(n-n1p-n1pq))
+#' true_q0_pars=c(n1q/(n-n1p-n1pq),2)
+#' 
+#' # Estimate parameters:
+#' est_q0_pars=fit.2g(q[which(p>0.5)])$pars
+#' 
+#' ############### Integrals ################
+#' int_true=il(v1,pi0_null=true_q0_pars[1],sigma_null=true_q0_pars[2],distx="norm")
+#' int_est=il(v1,pi0_null=est_q0_pars[1],sigma_null=est_q0_pars[2],distx="norm")
+#' ##########################################
+#'
+#' ############# Check integral #############
+#' # Sample values zp0,zq0 and p0,q0 following distribution of Zp,Zq|H^p=0
+#' nsc=1000000 # generate nsc sample values
+#' n0=round(nsc*true_q0_pars[1]); n1=nsc-n0
+#' zp0=rnorm(nsc,sd=1)
+#' zq0=c(rnorm(n0,sd=1), rnorm(n1,sd=true_q0_pars[2]))
+#' p0=2*pnorm(-abs(zp0)); q0=2*pnorm(-abs(zq0))
+#' 
+#' 
+#' # Proportion of values p0,q0 falling in region with co-ordinates v1$x[2,],v1$y
+#' length(which(mgcv::in.out(cbind(v1$x[2,],v1$y),cbind(p0,q0))))/nsc
+#' 
+#' # Value of integral over the region
+#' int_true[2] 
+#' ##########################################
 il=function(X,Y=NULL,pi0_null=NULL,sigma_null=rep(1,length(pi0_null)),rho_null=0,distx="norm",...) {
   
   if (is.null(Y) & length(X)!=2) stop("If Y is null, X must be a two-element list with components x and y") 
@@ -1016,35 +1009,29 @@ il=function(X,Y=NULL,pi0_null=NULL,sigma_null=rep(1,length(pi0_null)),rho_null=0
   out
 }
 
-
-
-
-
-
-##' Fit a specific two Gaussian mixture distribution to a set of P or Z values.
-##'
-##' Assumes 
-##' Z ~ N(0,1) with probability pi0, Z ~ N(0,sigma^2) with probability 1-pi0
-##'
-##' Returns MLE for pi0 and sigma. Uses R's optim function. Can weight observations.
-##' 
-##' @title fit.2g
-##' @param P numeric vector of observed data, either p-values or z-scores. If rho=0, should be one-dimensional vector; if rho is set, should be bivariate observations (P,Q)
-##' @param pars initial values for parameters
-##' @param weights optional weights for parameters
-##' @param sigma_range range of possible values for sigma (closed interval). Default [1,100]
-##' @return a list containing parameters pars, likelihoods under h1 (Z distributed as above), likelihood under h0 (Z~N(0,1)) and likelihood ratio lr.
-##' @importFrom mnormt dmnorm
-##' @importFrom stats qnorm dnorm
-##' @export
-##' @author James Liley
-##' @examples
-##' sigma=2; pi0 <- 0.8
-##' qnorm dnorm
-##' n=10000; n0=round(pi0*n); n1=n-n0
-##' Z = c(rnorm(n0,0,1),rnorm(n1,0,sqrt(1+ (sigma^2))))
-##' fit=fit.2g(Z)
-##' fit$pars
+#' Fit a specific two Gaussian mixture distribution to a set of P or Z values.
+#'
+#' Assumes 
+#' Z ~ N(0,1) with probability pi0, Z ~ N(0,sigma^2) with probability 1-pi0
+#'
+#' Returns MLE for pi0 and sigma. Uses R's optim function. Can weight observations.
+#' 
+#' @title fit.2g
+#' @param P numeric vector of observed data, either p-values or z-scores. If rho=0, should be one-dimensional vector; if rho is set, should be bivariate observations (P,Q)
+#' @param pars initial values for parameters
+#' @param weights optional weights for parameters
+#' @param sigma_range range of possible values for sigma (closed interval). Default [1,100]
+#' @return a list containing parameters pars, likelihoods under h1 (Z distributed as above), likelihood under h0 (Z~N(0,1)) and likelihood ratio lr.
+#' @importFrom stats qnorm dnorm
+#' @export
+#' @author James Liley
+#' @examples
+#' sigma=2; pi0 <- 0.8
+#' 
+#' n=10000; n0=round(pi0*n); n1=n-n0
+#' Z = c(rnorm(n0,0,1),rnorm(n1,0,sqrt(1+ (sigma^2))))
+#' fit=fit.2g(Z)
+#' fit$pars
 fit.2g=function(P, pars = c(0.5, 1.5), weights = rep(1, min(length(Z),dim(Z)[1])), 
   sigma_range = c(1,100),rho=0,...) {
   if (all(P<=1) & all(P>= 0)) Z=-qnorm(P/2) else Z=P # P-values or Z scores
@@ -1075,10 +1062,10 @@ fit.2g=function(P, pars = c(0.5, 1.5), weights = rep(1, min(length(Z),dim(Z)[1])
       v2=rbind(c(1,rho),c(rho,pars[2]^2))
       v2r=rbind(c(1,-rho),c(-rho,pars[2]^2))
       pi0=pars[1]
-      fw1= pi0*dmnorm(Z[w1,],varcov=v1) + (1-pi0)*dmnorm(Z[w1,],varcov=v2) 
-      fw2= sum(weights[w2]*(log(1-pi0) + dmnorm(Z[w2,],varcov=v2,log=T) ))
-      fw1r= pi0*dmnorm(Z[w1,],varcov=v1r) + (1-pi0)*dmnorm(Z[w1,],varcov=v2r)  
-      fw2r= sum(weights[w2]*(log(1-pi0) + dmnorm(Z[w2,],varcov=v2r,log=T) ))
+      fw1= pi0*mnormt::dmnorm(Z[w1,],varcov=v1) + (1-pi0)*mnormt::dmnorm(Z[w1,],varcov=v2) 
+      fw2= sum(weights[w2]*(log(1-pi0) + mnormt::dmnorm(Z[w2,],varcov=v2,log=T) ))
+      fw1r= pi0*mnormt::dmnorm(Z[w1,],varcov=v1r) + (1-pi0)*mnormt::dmnorm(Z[w1,],varcov=v2r)  
+      fw2r= sum(weights[w2]*(log(1-pi0) + mnormt::dmnorm(Z[w2,],varcov=v2r,log=T) ))
       -sum(weights[w1]*log(fw1+fw1r)) - (fw2+ fw2r)
     }
   }
@@ -1092,24 +1079,24 @@ fit.2g=function(P, pars = c(0.5, 1.5), weights = rep(1, min(length(Z),dim(Z)[1])
   return(yy)
 }
 
-##' Fit a specific two Gaussian mixture distribution to a set of P or Z values using a parallel implementation of optim
-##'
-##' Assumes 
-##' Z ~ N(0,1) with probability pi0, Z ~ N(0,sigma^2) with probability 1-pi0
-##'
-##' Returns MLE for pi0 and sigma. Uses R's optim function. Can weight observations.
-##' 
-##' @title fit.2g.parallel
-##' @param P numeric vector of observed data, either p-values or z-scores. If rho=0, should be one-dimensional vector; if rho is set, should be bivariate observations (P,Q)
-##' @param pars initial values for parameters
-##' @param weights optional weights for parameters
-##' @param sigma_range range of possible values for sigma (closed interval). Default [1,100]
-##' @param ncores number of cores on which to run parallel optimisation procedure
-##' @return a list containing parameters pars, likelihoods under h1 (Z distributed as above), likelihood under h0 (Z~N(0,1)) and likelihood ratio lr.
-##' @importFrom mnormt dmnorm
-##' @importFrom stats qnorm dnorm
-##' @export
-##' @author James Liley
+#' Fit a specific two Gaussian mixture distribution to a set of P or Z values using a parallel implementation of optim.
+#'
+#' Assumes 
+#' Z ~ N(0,1) with probability pi0, Z ~ N(0,sigma^2) with probability 1-pi0
+#'
+#' Returns MLE for pi0 and sigma. Uses R's optim function. Can weight observations.
+#' 
+#' @title fit.2g.parallel
+#' @param P numeric vector of observed data, either p-values or z-scores. If rho=0, should be one-dimensional vector; if rho is set, should be bivariate observations (P,Q)
+#' @param pars initial values for parameters
+#' @param weights optional weights for parameters
+#' @param sigma_range range of possible values for sigma (closed interval). Default [1,100]
+#' @param ncores number of cores on which to run parallel optimisation procedure
+#' @return a list containing parameters pars, likelihoods under h1 (Z distributed as above), likelihood under h0 (Z~N(0,1)) and likelihood ratio lr.
+#' @importFrom mnormt dmnorm
+#' @importFrom stats qnorm dnorm
+#' @export
+#' @author James Liley
 fit.2g.parallel=function(P, pars = c(0.5, 1.5), weights = rep(1, min(length(Z),dim(Z)[1])), 
   sigma_range = c(1,100),rho=0,ncores=1,...) {
   if (all(P<=1) & all(P>= 0)) Z=-qnorm(P/2) else Z=P # P-values or Z scores
@@ -1162,40 +1149,40 @@ fit.2g.parallel=function(P, pars = c(0.5, 1.5), weights = rep(1, min(length(Z),d
   return(yy)
 }
 
-##' Fit a four-part mixture normal model to bivariate data. Assumes that data are distributed as one of
-##'  N(0,1) x N(0,1)        with probability pi0
-##'  N(0,s1^2) x N(0,1)     with probability pi1
-##'  N(0,1) x N(0,t1^2)     with probability pi2
-##'  N(0,s2^2) x N(0,t2^2)  with probability 1-pi0-pi1-pi2
-##' Fits the set of parameters (pi0,pi1,pi2,s1,s2,t1,t2) using an E-M algorithm
-##' 
-##' @title fit.4g
-##' @param P matrix N x 2 of data points (Z scores or P-values)
-##' @param pars initial parameter values
-##' @param weights weights for points
-##' @param C include additive term C*log(pi0*pi1*pi2*(1-pi0-pi1-pi2)) in objective function to ensure identifiability of model
-##' @param maxit maximum number of iterations (supersedes tol)
-##' @param tol stop after increment in log-likelihood is smaller than this
-##' @param sgm force s1,s2,t1,t2 to be at least this value
-##' @export
-##' @importFrom stats qnorm dnorm 
-##' @author James Liley
-##' @return list with elements pars (fitted parameters), lhood (log likelihood) and hist (fitted parameters during algorithm
-##' @examples 
-##' pi0=0.5; pi1=0.15; pi2=0.25
-##' s1=3; s2=2; t1=2; t2=3
-##' true_pars=c(pi0,pi1,pi2,s1,s2,t1,t2)
-##' 
-##' 
-##' n=100000; n0=round(pi0*n); n1=round(pi1*n); n2=round(pi2*n); n3=n-n0-n1-n2
-##' 
-##' zs=c(rnorm(n0,sd=1),rnorm(n1,sd=s1),rnorm(n2,sd=1),rnorm(n3,sd=s2))
-##' zt=c(rnorm(n0,sd=1),rnorm(n1,sd=1),rnorm(n2,sd=t1),rnorm(n3,sd=t2))
-##' 
-##' Z=cbind(zs,zt)
-##' 
-##' f=fit.4g(Z)
-##' f$pars
+#' Fit a four-part mixture normal model to bivariate data. Assumes that data are distributed as one of
+#'  N(0,1) x N(0,1)        with probability pi0
+#'  N(0,s1^2) x N(0,1)     with probability pi1
+#'  N(0,1) x N(0,t1^2)     with probability pi2
+#'  N(0,s2^2) x N(0,t2^2)  with probability 1-pi0-pi1-pi2
+#' Fits the set of parameters (pi0,pi1,pi2,s1,s2,t1,t2) using an E-M algorithm
+#' 
+#' @title fit.4g
+#' @param P matrix N x 2 of data points (Z scores or P-values)
+#' @param pars initial parameter values
+#' @param weights weights for points
+#' @param C include additive term C*log(pi0*pi1*pi2*(1-pi0-pi1-pi2)) in objective function to ensure identifiability of model
+#' @param maxit maximum number of iterations (supersedes tol)
+#' @param tol stop after increment in log-likelihood is smaller than this
+#' @param sgm force s1,s2,t1,t2 to be at least this value
+#' @export
+#' @importFrom stats qnorm dnorm 
+#' @author James Liley
+#' @return list with elements pars (fitted parameters), lhood (log likelihood) and hist (fitted parameters during algorithm
+#' @examples 
+#' pi0=0.5; pi1=0.15; pi2=0.25
+#' s1=3; s2=2; t1=2; t2=3
+#' true_pars=c(pi0,pi1,pi2,s1,s2,t1,t2)
+#' 
+#' 
+#' n=100000; n0=round(pi0*n); n1=round(pi1*n); n2=round(pi2*n); n3=n-n0-n1-n2
+#' 
+#' zs=c(rnorm(n0,sd=1),rnorm(n1,sd=s1),rnorm(n2,sd=1),rnorm(n3,sd=s2))
+#' zt=c(rnorm(n0,sd=1),rnorm(n1,sd=1),rnorm(n2,sd=t1),rnorm(n3,sd=t2))
+#' 
+#' Z=cbind(zs,zt)
+#' 
+#' f=fit.4g(Z)
+#' f$pars
 fit.4g= function (P, pars = c(0.7, 0.1,0.1, 2, 2, 2, 2), weights = rep(1,dim(Z)[1]), C = 1, maxit = 10000, tol = 1e-04,sgm = c(1,100)) {
   
   if (all(P<=1) & all(P>= 0)) Z=-qnorm(P/2) else Z=P # P-values or Z scores
@@ -1268,43 +1255,43 @@ fit.4g= function (P, pars = c(0.7, 0.1,0.1, 2, 2, 2, 2), weights = rep(1,dim(Z)[
   return(list(pars=pars,lhood=hist[i-1,8],hist=hist))
 }
 
-##' Run the Benjamini-Hochberg procedure
-##' 
-##' @title bh
-##' @param P list of p-values
-##' @param alpha FDR control level
-##' @export
-##' @return indices of p-values to reject
-##' @examples 
-##' # no
+#' Run the Benjamini-Hochberg procedure
+#' 
+#' @title bh
+#' @param P list of p-values
+#' @param alpha FDR control level
+#' @export
+#' @return indices of p-values to reject
+#' @examples 
+#' # no
 bh=function(P,alpha) {
   ox=rank(P); n=length(P)
   w=which(P/ox <= alpha/n)
   if (length(w)>0) return(which(ox<= max(ox[w]))) else return(c())
 }
 
-##' Estimate cFDR at a set of points using counting-points method (cFDR1 or cFDR1s)
-##' 
-##' @title cfdr
-##' @param p vector of p-values for dependent variable of interest
-##' @param q vector of p-values from other dependent variable#
-##' @param sub list of indices at which to compute cFDR estimates
-##' @param exclude list of indices to exclude (each point (p[i],q[i]) is still automatically included in the computation of its own cFDR value)
-##' @param adj include estimate of Pr(H^p=0|Q<q) in estimate
-##' @return vector of cFDR values; set to 1 if index is not in 'sub'
-##' @export
-##' @importFrom stats qnorm ecdf
-##' @author James Liley
-##' @examples 
-##' # Generate standardised simulated dataset
-##' set.seed(1); n=10000; n1p=100; n1pq=100; n1q=100
-##' zp=c(rnorm(n1p,sd=3), rnorm(n1q,sd=1),rnorm(n1pq,sd=3), rnorm(n-n1p-n1q-n1pq,sd=1))
-##' zq=c(rnorm(n1p,sd=1), rnorm(n1q,sd=3),rnorm(n1pq,sd=3), rnorm(n-n1p-n1q-n1pq,sd=1))
-##' p=2*pnorm(-abs(zp)); q=2*pnorm(-abs(zq))
-##'
-##' cx=cfdr(p,q)
-##' 
-##' plot(p,q,cex=0.5,xlim=c(0,0.05)); points(p[which(cx<0.5)],q[which(cx<0.5)],col="red") 
+#' Estimate cFDR at a set of points using counting-points method (cFDR1 or cFDR1s)
+#' 
+#' @title cfdr
+#' @param p vector of p-values for dependent variable of interest
+#' @param q vector of p-values from other dependent variable#
+#' @param sub list of indices at which to compute cFDR estimates
+#' @param exclude list of indices to exclude (each point (p[i],q[i]) is still automatically included in the computation of its own cFDR value)
+#' @param adj include estimate of Pr(H^p=0|Q<q) in estimate
+#' @return vector of cFDR values; set to 1 if index is not in 'sub'
+#' @export
+#' @importFrom stats qnorm ecdf
+#' @author James Liley
+#' @examples 
+#' # Generate standardised simulated dataset
+#' set.seed(1); n=10000; n1p=100; n1pq=100; n1q=100
+#' zp=c(rnorm(n1p,sd=3), rnorm(n1q,sd=1),rnorm(n1pq,sd=3), rnorm(n-n1p-n1q-n1pq,sd=1))
+#' zq=c(rnorm(n1p,sd=1), rnorm(n1q,sd=3),rnorm(n1pq,sd=3), rnorm(n-n1p-n1q-n1pq,sd=1))
+#' p=2*pnorm(-abs(zp)); q=2*pnorm(-abs(zq))
+#'
+#' cx=cfdr(p,q)
+#' 
+#' plot(p,q,cex=0.5,xlim=c(0,0.05)); points(p[which(cx<0.5)],q[which(cx<0.5)],col="red") 
 cfdr=function(p,q,sub=which(qnorm(p/2)^2 + qnorm(q/2)^2 > 4),exclude=NULL,adj=F) {
   cf=rep(1,length(p))
   inc=setdiff(1:length(p),exclude)
@@ -1326,30 +1313,30 @@ cfdr=function(p,q,sub=which(qnorm(p/2)^2 + qnorm(q/2)^2 > 4),exclude=NULL,adj=F)
   cf
 }
 
-##' Estimate cFDR at a set of points using parametrisation (cFDR2 or cFDR2s)
-##' 
-##' @title cfdrx
-##' @param p vector of p-values for dependent variable of interest
-##' @param q vector of p-values from other dependent variable
-##' @param pars parameters governing fitted distribution of P,Q; get from function fit.4g
-##' @param sub list of indices at which to compute cFDR estimates
-##' @param adj include estimate of Pr(H^p=0|Q<q) in estimate
-##' @return vector of cFDR values; set to 1 if index is not in 'sub'
-##' @export
-##' @importFrom stats pnorm qnorm ecdf
-##' @author James Liley
-##' @examples 
-##' # Generate standardised simulated dataset
-##' set.seed(1); n=10000; n1p=100; n1pq=100; n1q=100
-##' zp=c(rnorm(n1p,sd=3), rnorm(n1q,sd=1),rnorm(n1pq,sd=3), rnorm(n-n1p-n1q-n1pq,sd=1))
-##' zq=c(rnorm(n1p,sd=1), rnorm(n1q,sd=3),rnorm(n1pq,sd=3), rnorm(n-n1p-n1q-n1pq,sd=1))
-##' p=2*pnorm(-abs(zp)); q=2*pnorm(-abs(zq))
-##'
-##' fit_pars=fit.4g(cbind(zp,zq))$pars
-##'
-##' cx=cfdrx(p,q,pars=fit_pars)
-##' 
-##' plot(p,q,cex=0.5,xlim=c(0,0.05)); points(p[which(cx<0.5)],q[which(cx<0.5)],col="red") 
+#' Estimate cFDR at a set of points using parametrisation (cFDR2 or cFDR2s)
+#' 
+#' @title cfdrx
+#' @param p vector of p-values for dependent variable of interest
+#' @param q vector of p-values from other dependent variable
+#' @param pars parameters governing fitted distribution of P,Q; get from function fit.4g
+#' @param sub list of indices at which to compute cFDR estimates
+#' @param adj include estimate of Pr(H^p=0|Q<q) in estimate
+#' @return vector of cFDR values; set to 1 if index is not in 'sub'
+#' @export
+#' @importFrom stats pnorm qnorm ecdf
+#' @author James Liley
+#' @examples 
+#' # Generate standardised simulated dataset
+#' set.seed(1); n=10000; n1p=100; n1pq=100; n1q=100
+#' zp=c(rnorm(n1p,sd=3), rnorm(n1q,sd=1),rnorm(n1pq,sd=3), rnorm(n-n1p-n1q-n1pq,sd=1))
+#' zq=c(rnorm(n1p,sd=1), rnorm(n1q,sd=3),rnorm(n1pq,sd=3), rnorm(n-n1p-n1q-n1pq,sd=1))
+#' p=2*pnorm(-abs(zp)); q=2*pnorm(-abs(zq))
+#'
+#' fit_pars=fit.4g(cbind(zp,zq))$pars
+#'
+#' cx=cfdrx(p,q,pars=fit_pars)
+#' 
+#' plot(p,q,cex=0.5,xlim=c(0,0.05)); points(p[which(cx<0.5)],q[which(cx<0.5)],col="red") 
 cfdrx=function(p,q,pars,sub=1:length(p),adj=F) {
   
   # functions for computation
@@ -1378,28 +1365,28 @@ cfdrx=function(p,q,pars,sub=1:length(p),adj=F) {
   out[sub]=(correct*raw_cfx(p,q))[sub]
 }
 
-##' Estimate local cFDR at a set of points using parametrisation 
-##' 
-##' @title cfdrxl
-##' @param p vector of p-values for dependent variable of interest
-##' @param q vector of p-values from other dependent variable
-##' @param pars parameters governing fitted distribution of P,Q; get from function fit.4g
-##' @return vector of cFDR values; set to 1 if index is not in 'sub'
-##' @export
-##' @importFrom stats qnorm dnorm 
-##' @author James Liley
-##' @examples 
-##' # Generate standardised simulated dataset
-##' set.seed(1); n=10000; n1p=100; n1pq=100; n1q=100
-##' zp=c(rnorm(n1p,sd=3), rnorm(n1q,sd=1),rnorm(n1pq,sd=3), rnorm(n-n1p-n1q-n1pq,sd=1))
-##' zq=c(rnorm(n1p,sd=1), rnorm(n1q,sd=3),rnorm(n1pq,sd=3), rnorm(n-n1p-n1q-n1pq,sd=1))
-##' p=2*pnorm(-abs(zp)); q=2*pnorm(-abs(zq))
-##'
-##' fit_pars=fit.4g(cbind(zp,zq))$pars
-##'
-##' cx=cfdrxl(p,q,pars=fit_pars)
-##' 
-##' plot(p,q,cex=0.5,xlim=c(0,0.05)); points(p[which(cx<0.5)],q[which(cx<0.5)],col="red") 
+#' Estimate local cFDR at a set of points using parametrisation 
+#' 
+#' @title cfdrxl
+#' @param p vector of p-values for dependent variable of interest
+#' @param q vector of p-values from other dependent variable
+#' @param pars parameters governing fitted distribution of P,Q; get from function fit.4g
+#' @return vector of cFDR values; set to 1 if index is not in 'sub'
+#' @export
+#' @importFrom stats qnorm dnorm 
+#' @author James Liley
+#' @examples 
+#' # Generate standardised simulated dataset
+#' set.seed(1); n=10000; n1p=100; n1pq=100; n1q=100
+#' zp=c(rnorm(n1p,sd=3), rnorm(n1q,sd=1),rnorm(n1pq,sd=3), rnorm(n-n1p-n1q-n1pq,sd=1))
+#' zq=c(rnorm(n1p,sd=1), rnorm(n1q,sd=3),rnorm(n1pq,sd=3), rnorm(n-n1p-n1q-n1pq,sd=1))
+#' p=2*pnorm(-abs(zp)); q=2*pnorm(-abs(zq))
+#'
+#' fit_pars=fit.4g(cbind(zp,zq))$pars
+#'
+#' cx=cfdrxl(p,q,pars=fit_pars)
+#' 
+#' plot(p,q,cex=0.5,xlim=c(0,0.05)); points(p[which(cx<0.5)],q[which(cx<0.5)],col="red") 
 cfdrxl=function(p,q,pars) {
   zp=-qnorm(p/2); zq=-qnorm(q/2)
   denom=function(z,zc,pars) {
@@ -1415,30 +1402,30 @@ cfdrxl=function(p,q,pars) {
   (pars[1]+pars[3])*num(zp,zq,pars)/denom(zp,zq,pars)
 }
 
-##' Estimate cFDR at a set of points using kernel density estimate (cFDR3 or cFDR3s)
-##' 
-##' @title cfdry
-##' @param p vector of p-values for dependent variable of interest
-##' @param q vector of p-values from other dependent variable
-##' @param sub list of indices at which to compute cFDR estimates
-##' @param exclude list of indices to exclude (each point (p[i],q[i]) is still automatically included in the computation of its own cFDR value)
-##' @param adj include estimate of Pr(H^p=0|Q<q) in estimate
-##' @param ... other parameters passed to kde2d
-##' @return vector of cFDR values; set to 1 if index is not in 'sub'
-##' @export
-##' @importFrom stats qnorm ecdf
-##' @author James Liley
-##' @examples 
-##' # Generate standardised simulated dataset
-##' set.seed(1); n=10000; n1p=100; n1pq=100; n1q=100
-##' zp=c(rnorm(n1p,sd=3), rnorm(n1q,sd=1),rnorm(n1pq,sd=3), rnorm(n-n1p-n1q-n1pq,sd=1))
-##' zq=c(rnorm(n1p,sd=1), rnorm(n1q,sd=3),rnorm(n1pq,sd=3), rnorm(n-n1p-n1q-n1pq,sd=1))
-##' p=2*pnorm(-abs(zp)); q=2*pnorm(-abs(zq))
-##'
-##'
-##' cx=cfdry(p,q)
-##' 
-##' plot(p,q,cex=0.5,xlim=c(0,0.05)); points(p[which(cx<0.5)],q[which(cx<0.5)],col="red")
+#' Estimate cFDR at a set of points using kernel density estimate (cFDR3 or cFDR3s)
+#' 
+#' @title cfdry
+#' @param p vector of p-values for dependent variable of interest
+#' @param q vector of p-values from other dependent variable
+#' @param sub list of indices at which to compute cFDR estimates
+#' @param exclude list of indices to exclude (each point (p[i],q[i]) is still automatically included in the computation of its own cFDR value)
+#' @param adj include estimate of Pr(H^p=0|Q<q) in estimate
+#' @param ... other parameters passed to kde2d
+#' @return vector of cFDR values; set to 1 if index is not in 'sub'
+#' @export
+#' @importFrom stats qnorm ecdf
+#' @author James Liley
+#' @examples 
+#' # Generate standardised simulated dataset
+#' set.seed(1); n=10000; n1p=100; n1pq=100; n1q=100
+#' zp=c(rnorm(n1p,sd=3), rnorm(n1q,sd=1),rnorm(n1pq,sd=3), rnorm(n-n1p-n1q-n1pq,sd=1))
+#' zq=c(rnorm(n1p,sd=1), rnorm(n1q,sd=3),rnorm(n1pq,sd=3), rnorm(n-n1p-n1q-n1pq,sd=1))
+#' p=2*pnorm(-abs(zp)); q=2*pnorm(-abs(zq))
+#'
+#'
+#' cx=cfdry(p,q)
+#' 
+#' plot(p,q,cex=0.5,xlim=c(0,0.05)); points(p[which(cx<0.5)],q[which(cx<0.5)],col="red")
 cfdry=function(p,q,sub=1:length(p),exclude=NULL,adj=F,...) {
   
   res=200

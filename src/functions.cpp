@@ -5,9 +5,14 @@ using namespace Rcpp;
 
 //' Empirical cdf
 //'
-//' @param reference
-//' @param sample
-
+//' This function estimates an empirical cdf using the reference parameter and then 
+//' evaluates the estimated empirical cdf at the points specified in the sample parameter. 
+//' 
+//' @param reference NumericVector
+//' @param sample NumericVector
+//' @return NumericVector of estimated quantiles of sample values
+//' 
+//' @author Tom Willis
 // [[Rcpp::export]]
 NumericVector ecdf_cpp(NumericVector reference, NumericVector sample) {
   NumericVector sortedRef = clone(reference);
@@ -23,24 +28,19 @@ NumericVector ecdf_cpp(NumericVector reference, NumericVector sample) {
   return estimatedQuantiles/((double) sortedRef.size());
 }
 
-/*
-
- TODO other rules; for now, we just have hard-coded a default of rule=2
-
- TODO just returning interpolated function values for now
-
- TODO if we knew there were no duplicates, we could speed things up by sorting xout, retaining the order, interpolating, then sorting the interpolated values back into the original order of xout
-
- TODO edge cases where xout lies outside extrema or xout is equal to an element of x
-
- TODO the call to approx_cpp with x=pval2, where pval2 is sorted largest to smallest
-
- Linear interpolation is performed with f(x)=f(x0)+[(f(x1)-f(x0))/(x1-x0)]*(x-x0)
-
- rule=2 means that if an xout value falls outside [min(xtest), max(xtest)], then we use the closest of these two extrema
-*/
-
-
+//' Linear interpolation function
+//'
+//' This function carries out linear interpolation, reproducing a subset of the behaviour of stats::approx in R. Linear interpolation is performed with f(x)=f(x0)+[(f(x1)-f(x0))/(x1-x0)]*(x-x0)
+//'
+//' x is assumed to be sorted; if sorted in descending order, the order of elements in x and y is reversed. If a value of xout lies outside the range [min(x), max(x)], the value is interpolated using the nearest extremum (this corresponds to the behaviour of stats::approx with method=2).
+//'
+//' @param x NumericVector of x coordinates of points to be interpolated
+//' @param y NumericVector of y coordinates of points to be interpolated
+//' @param xout NumericVector of points at which to interpolate
+//'
+//' @return NumericVector of interpolated values 
+//' 
+//' @author Tom Willis
 // [[Rcpp::export]]
 NumericVector approx_cpp(NumericVector x, NumericVector y, NumericVector xout) {
   NumericVector yout(xout.size());
@@ -52,7 +52,6 @@ NumericVector approx_cpp(NumericVector x, NumericVector y, NumericVector xout) {
     if(!std::is_sorted(x.begin(), x.end(), std::greater<double>())) {
         stop("Input vector x is not sorted in ascending or descending order");
       } else {
-      //warning("Reversing order as x is sorted in descending order");
       std::reverse(xc.begin(), xc.end());
       std::reverse(yc.begin(), yc.end());
       }
@@ -87,6 +86,23 @@ NumericVector approx_cpp(NumericVector x, NumericVector y, NumericVector xout) {
 
 }
 
+//' Returns coordinates of L-regions for cFDR method. Drop-in replacement for the cfdr::vl function in the use case wherein indices and fold are supplied and mode=2.
+//' 
+//' @param p principal p-values
+//' @param q conditional p-values
+//' @param adj adjust cFDR values and hence curves L using estimate of Pr(H0|Pj<pj)
+//' @param indices indices of points at which to compute v(L)
+//' @param at cfdr cutoff/cutoffs. Defaults to null
+//' @param fold indices of points to exclude when from calculation of L-curves 
+//' @param p_threshold if H0 is to be rejected automatically whenever p<p_threshold, include this in all regions L
+//' @param nt number of test points in x-direction, default 5000
+//' @param nv resolution for constructing L-curves, default 1000
+//' @param scale return curves on the p- or z- plane. Y values are equally spaced on the z-plane.
+//' @param closed determines whether curves are closed polygons encircling regions L (closed=T), or lines indicating the rightmost border of regions L
+//' @param verbose print progress 
+//' @return list containing elements x, y. Assuming n curves are calculated (where n=length(indices) or length(at)) and closed=T, x is a matrix of dimension n x (4+nv), y ix a vector of length (4+nv).
+//' 
+//' @author Tom Willis
 // [[Rcpp::export]]
 List vl_mode2(NumericVector p, NumericVector q, IntegerVector indices, IntegerVector fold,  bool adj=true, Nullable<NumericVector> at=R_NilValue, int nt=5000, int nv=1000, double p_threshold=0, CharacterVector scale=CharacterVector::create("p", "z"), bool closed=true, bool verbose=false, double gx=0.00001) {
 

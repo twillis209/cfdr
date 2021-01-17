@@ -4,8 +4,18 @@
 \alias{vlo}
 \title{vlo}
 \usage{
-vlo(p, q, f0, f, indices = NULL, at = NULL, nt = 5000, nv = 1000,
-  scale = c("p", "z"), closed = T)
+vlo(
+  p,
+  q,
+  f0,
+  f,
+  indices = NULL,
+  at = NULL,
+  nt = 5000,
+  nv = 1000,
+  scale = c("p", "z"),
+  closed = T
+)
 }
 \arguments{
 \item{p}{principal p-values}
@@ -43,6 +53,8 @@ zq=c(rnorm(n1p,sd=1), rnorm(n1q,sd=3),rnorm(n1pq,sd=3), rnorm(n-n1p-n1q-n1pq,sd=
 p=2*pnorm(-abs(zp)); q=2*pnorm(-abs(zq))
 fold_id=(1:n) \%\% 3
 
+# estimate parameters of underying dataset
+fit_pars=fit.4g(cbind(zp,zq))$pars
 
 # points to generate L-regions for
 example_indices=c(4262, 268,83,8203)
