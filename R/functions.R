@@ -12,17 +12,6 @@
 #
 
 ###########################################################################
-## Packages and scripts ###################################################
-###########################################################################
-
-#library(mnormt)
-#library(mgcv)
-#library(pbivnorm)
-#library(MASS)
-#library(fields)
-#library(optimParallel)
-
-###########################################################################
 ## Functions ##############################################################
 ###########################################################################
 
@@ -295,6 +284,7 @@ vl=function(p,q,adj=TRUE,indices=NULL,at=NULL,mode=0,fold=NULL,nt=5000, nv=1000,
 ##' @param scale return curves on the p- or z- plane. Y values are equally spaced on the z-plane.
 ##' @param closed determines whether curves are closed polygons encircling regions L (closed=T), or lines indicating the rightmost border of regions L
 ##' @export
+##' @importFrom stats qnorm pnorm approx 
 ##' @author James Liley
 ##' @return list containing elements x, y. Assuming n curves are calculated (where n=length(indices) or length(at)) and closed=T, x is a matrix of dimension n x (4+nv), y ix a vector of length (4+nv).
 ##' @examples 
@@ -394,6 +384,7 @@ vlo=function(p,q,f0,f,indices=NULL,at=NULL,nt=5000, nv=1000, scale=c("p","z"), c
 ##' @param closed determines whether curves are closed polygons encircling regions L (closed=T), or lines indicating the rightmost border of regions L
 ##' @author James Liley
 ##' @export
+##' @importFrom stats qnorm pnorm ecdf approx uniroot
 ##' @return list containing elements x, y. Assuming n curves are calculated and closed=T (where n=length(indices) or length(at)), x is a matrix of dimension n x (4+nv), y ix a vector of length (4+nv).
 ##' @examples 
 ##' # Generate standardised simulated dataset
@@ -534,6 +525,7 @@ vlx=function(p,q,pars,adj=1,indices=NULL,at=NULL,fold=NULL,p_threshold=0,nt=5000
 ##' @param closed determines whether curves are closed polygons encircling regions L (closed=T), or lines indicating the rightmost border of regions L
 ##' @author James Liley
 ##' @export
+##' @importFrom stats qnorm dnorm pnorm approx
 ##' @return list containing elements x, y. Assuming n curves are calculated and closed=T (where n=length(indices) or length(at)), x is a matrix of dimension n x (4+nv), y ix a vector of length (4+nv).
 ##' @examples 
 ##' # Generate standardised simulated dataset
@@ -627,8 +619,6 @@ vlxl=function(p,q,pars,indices=NULL,at=NULL,p_threshold=0,nt=5000, nv=1000,scale
   
 }
 
-
-
 ##' Return co-ordinates of L-regions for cFDR method using kernel density method, with or without estimation
 ##'  of Pr(H0|Pj<pj).
 ##'
@@ -651,6 +641,7 @@ vlxl=function(p,q,pars,indices=NULL,at=NULL,p_threshold=0,nt=5000, nv=1000,scale
 ##' @param ... other parameters passed to function kde2d. Can be used to set a non-Gaussian kernel.
 ##' @author James Liley
 ##' @export
+##' @importFrom stats qnorm pnorm ecdf approx 
 ##' @return list containing elements x, y. Assuming n curves are calculated and closed=T (where n=length(indices) or length(at)), x is a matrix of dimension n x (4+nv), y ix a vector of length (4+nv).
 ##' @examples 
 ##' # Generate standardised simulated dataset
@@ -777,6 +768,7 @@ vly=function(p,q,adj=T,indices=NULL,at=NULL,mode=0,fold=NULL,p_threshold=0,nt=50
 ##' @param ... other parameters passed to function kde2d. Can be used to set a non-Gaussian kernel.
 ##' @author James Liley
 ##' @export
+##' @importFrom stats qnorm dnorm density pnorm approx 
 ##' @return list containing elements x, y. Assuming n curves are calculated and closed=T (where n=length(indices) or length(at)), x is a matrix of dimension n x (4+nv), y ix a vector of length (4+nv).
 ##' @examples 
 ##' # Generate standardised simulated dataset
@@ -902,6 +894,7 @@ vlyl=function(p,q,indices=NULL,at=NULL,mode=0,fold=NULL,p_threshold=0,nt=5000,nv
 ##' @param ... additional parameters passed to CDF and PDF functions, ie df=3
 ##' @author James Liley
 ##' @export
+##' @importFrom stats qnorm dnorm dt dcauchy pnorm pt pcauchy
 ##' @return matrix of dimension nk x np; [k,p]th element is the integral for the kth region using the pth parameter values.
 ##' @examples 
 ##' # Generate standardised simulated dataset
@@ -1042,11 +1035,12 @@ il=function(X,Y=NULL,pi0_null=NULL,sigma_null=rep(1,length(pi0_null)),rho_null=0
 ##' @param sigma_range range of possible values for sigma (closed interval). Default [1,100]
 ##' @return a list containing parameters pars, likelihoods under h1 (Z distributed as above), likelihood under h0 (Z~N(0,1)) and likelihood ratio lr.
 ##' @importFrom mnormt dmnorm
+##' @importFrom stats qnorm dnorm
 ##' @export
 ##' @author James Liley
 ##' @examples
 ##' sigma=2; pi0 <- 0.8
-##' 
+##' qnorm dnorm
 ##' n=10000; n0=round(pi0*n); n1=n-n0
 ##' Z = c(rnorm(n0,0,1),rnorm(n1,0,sqrt(1+ (sigma^2))))
 ##' fit=fit.2g(Z)
@@ -1088,7 +1082,7 @@ fit.2g=function(P, pars = c(0.5, 1.5), weights = rep(1, min(length(Z),dim(Z)[1])
       -sum(weights[w1]*log(fw1+fw1r)) - (fw2+ fw2r)
     }
   }
-  zx = optim(pars, function(p) l2(p), lower = c(1e-05, sigma_range[1]), 
+  zx = stats::optim(pars, function(p) l2(p), lower = c(1e-05, sigma_range[1]), 
     upper = c(1 - (1e-05), sigma_range[2]), method = "L-BFGS-B", control = list(factr = 10), 
     ...)
   h1 = -zx$value
@@ -1113,6 +1107,7 @@ fit.2g=function(P, pars = c(0.5, 1.5), weights = rep(1, min(length(Z),dim(Z)[1])
 ##' @param ncores number of cores on which to run parallel optimisation procedure
 ##' @return a list containing parameters pars, likelihoods under h1 (Z distributed as above), likelihood under h0 (Z~N(0,1)) and likelihood ratio lr.
 ##' @importFrom mnormt dmnorm
+##' @importFrom stats qnorm dnorm
 ##' @export
 ##' @author James Liley
 fit.2g.parallel=function(P, pars = c(0.5, 1.5), weights = rep(1, min(length(Z),dim(Z)[1])), 
@@ -1183,6 +1178,7 @@ fit.2g.parallel=function(P, pars = c(0.5, 1.5), weights = rep(1, min(length(Z),d
 ##' @param tol stop after increment in log-likelihood is smaller than this
 ##' @param sgm force s1,s2,t1,t2 to be at least this value
 ##' @export
+##' @importFrom stats qnorm dnorm 
 ##' @author James Liley
 ##' @return list with elements pars (fitted parameters), lhood (log likelihood) and hist (fitted parameters during algorithm
 ##' @examples 
@@ -1297,6 +1293,7 @@ bh=function(P,alpha) {
 ##' @param adj include estimate of Pr(H^p=0|Q<q) in estimate
 ##' @return vector of cFDR values; set to 1 if index is not in 'sub'
 ##' @export
+##' @importFrom stats qnorm ecdf
 ##' @author James Liley
 ##' @examples 
 ##' # Generate standardised simulated dataset
@@ -1339,6 +1336,7 @@ cfdr=function(p,q,sub=which(qnorm(p/2)^2 + qnorm(q/2)^2 > 4),exclude=NULL,adj=F)
 ##' @param adj include estimate of Pr(H^p=0|Q<q) in estimate
 ##' @return vector of cFDR values; set to 1 if index is not in 'sub'
 ##' @export
+##' @importFrom stats pnorm qnorm ecdf
 ##' @author James Liley
 ##' @examples 
 ##' # Generate standardised simulated dataset
@@ -1388,6 +1386,7 @@ cfdrx=function(p,q,pars,sub=1:length(p),adj=F) {
 ##' @param pars parameters governing fitted distribution of P,Q; get from function fit.4g
 ##' @return vector of cFDR values; set to 1 if index is not in 'sub'
 ##' @export
+##' @importFrom stats qnorm dnorm 
 ##' @author James Liley
 ##' @examples 
 ##' # Generate standardised simulated dataset
@@ -1427,6 +1426,7 @@ cfdrxl=function(p,q,pars) {
 ##' @param ... other parameters passed to kde2d
 ##' @return vector of cFDR values; set to 1 if index is not in 'sub'
 ##' @export
+##' @importFrom stats qnorm ecdf
 ##' @author James Liley
 ##' @examples 
 ##' # Generate standardised simulated dataset
@@ -1468,5 +1468,5 @@ cfdry=function(p,q,sub=1:length(p),exclude=NULL,adj=F,...) {
 ## Incidental functions ###################################################
 ###########################################################################
 
-px=function(x,add=F,...) if (!add) plot(-log10((1:length(x))/(1+length(x))),-log10(sort(x)),...) else points(-log10((1:length(x))/(1+length(x))),-log10(sort(x)),...) 
-ab=function() abline(0,1,col="red")
+px=function(x,add=F,...) if (!add) plot(-log10((1:length(x))/(1+length(x))),-log10(sort(x)),...) else graphics::points(-log10((1:length(x))/(1+length(x))),-log10(sort(x)),...)
+ab=function() graphics::abline(0,1,col="red")
