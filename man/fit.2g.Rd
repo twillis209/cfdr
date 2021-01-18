@@ -21,6 +21,8 @@ fit.2g(
 \item{weights}{optional weights for parameters}
 
 \item{sigma_range}{range of possible values for sigma (closed interval). Default [1,100]}
+
+\item{rho}{correlation between P and Q if bivariate observations are specified}
 }
 \value{
 a list containing parameters pars, likelihoods under h1 (Z distributed as above), likelihood under h0 (Z~N(0,1)) and likelihood ratio lr.

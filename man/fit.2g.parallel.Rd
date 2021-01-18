@@ -23,6 +23,8 @@ fit.2g.parallel(
 
 \item{sigma_range}{range of possible values for sigma (closed interval). Default [1,100]}
 
+\item{rho}{correlation between P and Q if bivariate observations are specified}
+
 \item{ncores}{number of cores on which to run parallel optimisation procedure}
 }
 \value{

@@ -32,6 +32,8 @@ vlx(
 
 \item{at}{cfdr cutoff/cutoffs. Defaults to null}
 
+\item{fold}{indices of points to omit from set used to compute L-curves}
+
 \item{p_threshold}{if H0 is to be rejected automatically whenever p<p_threshold, include this in all regions L}
 
 \item{nt}{number of test points in x-direction, default 5000}

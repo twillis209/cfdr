@@ -15,9 +15,11 @@
 ## Functions ##############################################################
 ###########################################################################
 
-#' Return co-ordinates of L-regions for cFDR method, with or without estimation of Pr(H0|Pj<pj).
+#' @title vl
 #' 
-#' Parameter 'mode' defines the way in which L-curves are constructed. L-curves define a mapping 
+#' @description Return co-ordinates of L-regions for cFDR method, with or without estimation of Pr(H0|Pj<pj).
+#' 
+#' @details Parameter 'mode' defines the way in which L-curves are constructed. L-curves define a mapping 
 #' from the unit square [0,1]^2 onto the unit interval [0,1], and we consider the mapped values 
 #' of each point (p[i],q[i]). In this method (cFDR1) the mapping depends on the points used to 
 #' generate L, and if these points coincide with the points we are using the map for, the 
@@ -25,7 +27,6 @@
 #' generating L-curves, and can be used to ensure that the points used to define curves L (and 
 #' hence the mapping) are distinct from the points the mapping is used on.
 #' 
-#' @title vl
 #' @param p principal p-values
 #' @param q conditional p-values
 #' @param adj adjust cFDR values and hence curves L using estimate of Pr(H0|Pj<pj)
@@ -39,6 +40,7 @@
 #' @param scale return curves on the p- or z- plane. Y values are equally spaced on the z-plane.
 #' @param closed determines whether curves are closed polygons encircling regions L (closed=T), or lines indicating the rightmost border of regions L
 #' @param verbose print progress if mode=1
+#' @param gx
 #' @export
 #' @importFrom stats qnorm pnorm ecdf approx   
 #' @author James Liley
@@ -79,7 +81,7 @@
 vl=function(p,q,adj=TRUE,indices=NULL,at=NULL,mode=0,fold=NULL,nt=5000, nv=1000, p_threshold=0, scale=c("p","z"), closed=TRUE,verbose=FALSE,gx=10^-5) {
 
   if(mode==2 & !is.null(indices) & !is.null(fold)) {
-  return(vl_mode2(p=p,q=q,indices=indices,fold=fold,adj=adj,at=at,nt=nt,nv=nv,p_threshold=p_threshold,scale=scale,closed=closed,verbose=verbose,gx=gx))
+  return(vl_mode2(p=p,q=q,indices=indices,fold=fold,adj=adj,at=at,nt=nt,nv=nv,p_threshold=p_threshold,scale=scale,closed=closed,gx=gx))
   }
   
                                         # internal interpolation function
@@ -377,6 +379,7 @@ vlo=function(p,q,f0,f,indices=NULL,at=NULL,nt=5000, nv=1000, scale=c("p","z"), c
 #' @param adj adjust cFDR values and hence curves L using estimate of Pr(H0|Pj<pj). Set adj to 1 to do this from the empirical distribution of Zq, 2 to do it using the fitted parameters.
 #' @param indices compute v(L) at indices of points. Overrides parameter at if set.
 #' @param at cfdr cutoff/cutoffs. Defaults to null
+#' @param fold indices of points to omit from set used to compute L-curves
 #' @param nt number of test points in x-direction, default 5000
 #' @param nv resolution for constructing L-curves, default 1000
 #' @param p_threshold if H0 is to be rejected automatically whenever p<p_threshold, include this in all regions L
@@ -751,7 +754,6 @@ vly=function(p,q,adj=T,indices=NULL,at=NULL,mode=0,fold=NULL,p_threshold=0,nt=50
 #' @title vlyl
 #' @param p principal p-values
 #' @param q conditional p-values
-#' @param adj adjust cFDR values and hence curves L using estimate of Pr(H0|Pj<pj)
 #' @param indices compute v(L) at indices of points. Overrides parameter at if set.
 #' @param at cfdr cutoff/cutoffs. Defaults to null
 #' @param mode set to 0 to leave all of 'indices' in, 1 (NOT CURRENTLY SUPPORTED) to remove each index only when computing L at that point, 2 to remove all of 'indices' from p,q
@@ -797,7 +799,7 @@ vly=function(p,q,adj=T,indices=NULL,at=NULL,mode=0,fold=NULL,p_threshold=0,nt=50
 #' for (i in 1:length(example_indices)) points(p[example_indices[i]],q[example_indices[i]],pch=16,col="blue")
 #'
 #' 
-vlyl=function(p,q,indices=NULL,at=NULL,mode=0,fold=NULL,p_threshold=0,nt=5000,nv=1000,scale=c("p","z"),closed=T,bw=1,...) {
+vlyl=function(p,q,indices=NULL,at=NULL,mode=0,fold=NULL,p_threshold=0,nt=5000,nv=1000,scale=c("p","z"),closed=T,...) {
   
   res=200
   
@@ -1021,6 +1023,7 @@ il=function(X,Y=NULL,pi0_null=NULL,sigma_null=rep(1,length(pi0_null)),rho_null=0
 #' @param pars initial values for parameters
 #' @param weights optional weights for parameters
 #' @param sigma_range range of possible values for sigma (closed interval). Default [1,100]
+#' @param rho correlation between P and Q if bivariate observations are specified
 #' @return a list containing parameters pars, likelihoods under h1 (Z distributed as above), likelihood under h0 (Z~N(0,1)) and likelihood ratio lr.
 #' @importFrom stats qnorm dnorm
 #' @export
@@ -1091,6 +1094,7 @@ fit.2g=function(P, pars = c(0.5, 1.5), weights = rep(1, min(length(Z),dim(Z)[1])
 #' @param pars initial values for parameters
 #' @param weights optional weights for parameters
 #' @param sigma_range range of possible values for sigma (closed interval). Default [1,100]
+#' @param rho correlation between P and Q if bivariate observations are specified
 #' @param ncores number of cores on which to run parallel optimisation procedure
 #' @return a list containing parameters pars, likelihoods under h1 (Z distributed as above), likelihood under h0 (Z~N(0,1)) and likelihood ratio lr.
 #' @importFrom mnormt dmnorm

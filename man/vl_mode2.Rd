@@ -2,7 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{vl_mode2}
 \alias{vl_mode2}
-\title{Returns coordinates of L-regions for cFDR method. Drop-in replacement for the cfdr::vl function in the use case wherein indices and fold are supplied and mode=2.}
+\title{Returns coordinates of L-regions for cFDR method.}
 \usage{
 vl_mode2(
   p,
@@ -16,7 +16,6 @@ vl_mode2(
   p_threshold = 0,
   scale = as.character(c("p", "z")),
   closed = TRUE,
-  verbose = FALSE,
   gx = 1e-05
 )
 }
@@ -42,14 +41,12 @@ vl_mode2(
 \item{scale}{return curves on the p- or z- plane. Y values are equally spaced on the z-plane.}
 
 \item{closed}{determines whether curves are closed polygons encircling regions L (closed=T), or lines indicating the rightmost border of regions L}
-
-\item{verbose}{print progress}
 }
 \value{
 list containing elements x, y. Assuming n curves are calculated (where n=length(indices) or length(at)) and closed=T, x is a matrix of dimension n x (4+nv), y ix a vector of length (4+nv).
 }
 \description{
-Returns coordinates of L-regions for cFDR method. Drop-in replacement for the cfdr::vl function in the use case wherein indices and fold are supplied and mode=2.
+Drop-in replacement for the cfdr::vl function in the use case wherein indices and fold are supplied and mode=2.
 }
 \author{
 Tom Willis

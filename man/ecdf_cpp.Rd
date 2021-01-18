@@ -7,9 +7,9 @@
 ecdf_cpp(reference, sample)
 }
 \arguments{
-\item{reference}{NumericVector}
+\item{reference}{NumericVector containing reference points to which to fit empirical cdf}
 
-\item{sample}{NumericVector}
+\item{sample}{NumericVector containing points at which to evaluate empirical cdf}
 }
 \value{
 NumericVector of estimated quantiles of sample values

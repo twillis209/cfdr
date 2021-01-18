@@ -17,10 +17,10 @@ approx_cpp(x, y, xout)
 NumericVector of interpolated values
 }
 \description{
-This function carries out linear interpolation, reproducing a subset of the behaviour of stats::approx in R. Linear interpolation is performed with f(x)=f(x0)+[(f(x1)-f(x0))/(x1-x0)]*(x-x0)
+This function carries out linear interpolation, reproducing a subset of the behaviour of stats::approx in R.
 }
 \details{
-x is assumed to be sorted; if sorted in descending order, the order of elements in x and y is reversed. If a value of xout lies outside the range [min(x), max(x)], the value is interpolated using the nearest extremum (this corresponds to the behaviour of stats::approx with method=2).
+Linear interpolation is performed with f(x)=f(x0)+[(f(x1)-f(x0))/(x1-x0)]*(x-x0). x is assumed to be sorted; if sorted in descending order, the order of elements in x and y is reversed. If a value of xout lies outside the range [min(x), max(x)], the value is interpolated using the nearest extremum (this corresponds to the behaviour of stats::approx with method=2).
 }
 \author{
 Tom Willis

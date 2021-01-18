@@ -31,8 +31,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // vl_mode2
-List vl_mode2(NumericVector p, NumericVector q, IntegerVector indices, IntegerVector fold, bool adj, Nullable<NumericVector> at, int nt, int nv, double p_threshold, CharacterVector scale, bool closed, bool verbose, double gx);
-RcppExport SEXP _cfdr_vl_mode2(SEXP pSEXP, SEXP qSEXP, SEXP indicesSEXP, SEXP foldSEXP, SEXP adjSEXP, SEXP atSEXP, SEXP ntSEXP, SEXP nvSEXP, SEXP p_thresholdSEXP, SEXP scaleSEXP, SEXP closedSEXP, SEXP verboseSEXP, SEXP gxSEXP) {
+List vl_mode2(NumericVector p, NumericVector q, IntegerVector indices, IntegerVector fold, bool adj, Nullable<NumericVector> at, int nt, int nv, double p_threshold, CharacterVector scale, bool closed, double gx);
+RcppExport SEXP _cfdr_vl_mode2(SEXP pSEXP, SEXP qSEXP, SEXP indicesSEXP, SEXP foldSEXP, SEXP adjSEXP, SEXP atSEXP, SEXP ntSEXP, SEXP nvSEXP, SEXP p_thresholdSEXP, SEXP scaleSEXP, SEXP closedSEXP, SEXP gxSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -47,9 +47,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< double >::type p_threshold(p_thresholdSEXP);
     Rcpp::traits::input_parameter< CharacterVector >::type scale(scaleSEXP);
     Rcpp::traits::input_parameter< bool >::type closed(closedSEXP);
-    Rcpp::traits::input_parameter< bool >::type verbose(verboseSEXP);
     Rcpp::traits::input_parameter< double >::type gx(gxSEXP);
-    rcpp_result_gen = Rcpp::wrap(vl_mode2(p, q, indices, fold, adj, at, nt, nv, p_threshold, scale, closed, verbose, gx));
+    rcpp_result_gen = Rcpp::wrap(vl_mode2(p, q, indices, fold, adj, at, nt, nv, p_threshold, scale, closed, gx));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -57,7 +56,7 @@ END_RCPP
 static const R_CallMethodDef CallEntries[] = {
     {"_cfdr_ecdf_cpp", (DL_FUNC) &_cfdr_ecdf_cpp, 2},
     {"_cfdr_approx_cpp", (DL_FUNC) &_cfdr_approx_cpp, 3},
-    {"_cfdr_vl_mode2", (DL_FUNC) &_cfdr_vl_mode2, 13},
+    {"_cfdr_vl_mode2", (DL_FUNC) &_cfdr_vl_mode2, 12},
     {NULL, NULL, 0}
 };
 

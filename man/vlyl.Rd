@@ -16,7 +16,6 @@ vlyl(
   nv = 1000,
   scale = c("p", "z"),
   closed = T,
-  bw = 1,
   ...
 )
 }
@@ -44,8 +43,6 @@ vlyl(
 \item{closed}{determines whether curves are closed polygons encircling regions L (closed=T), or lines indicating the rightmost border of regions L}
 
 \item{...}{other parameters passed to function kde2d. Can be used to set a non-Gaussian kernel.}
-
-\item{adj}{adjust cFDR values and hence curves L using estimate of Pr(H0|Pj<pj)}
 }
 \value{
 list containing elements x, y. Assuming n curves are calculated and closed=T (where n=length(indices) or length(at)), x is a matrix of dimension n x (4+nv), y ix a vector of length (4+nv).

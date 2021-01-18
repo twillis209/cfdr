@@ -3,13 +3,13 @@
 
 using namespace Rcpp;
 
-//' Empirical cdf
+//' @title Empirical cdf
 //'
-//' This function estimates an empirical cdf using the reference parameter and then 
+//' @description This function estimates an empirical cdf using the reference parameter and then 
 //' evaluates the estimated empirical cdf at the points specified in the sample parameter. 
 //' 
-//' @param reference NumericVector
-//' @param sample NumericVector
+//' @param reference NumericVector containing reference points to which to fit empirical cdf
+//' @param sample NumericVector containing points at which to evaluate empirical cdf
 //' @return NumericVector of estimated quantiles of sample values
 //' 
 //' @author Tom Willis
@@ -28,11 +28,11 @@ NumericVector ecdf_cpp(NumericVector reference, NumericVector sample) {
   return estimatedQuantiles/((double) sortedRef.size());
 }
 
-//' Linear interpolation function
+//' @title Linear interpolation function
 //'
-//' This function carries out linear interpolation, reproducing a subset of the behaviour of stats::approx in R. Linear interpolation is performed with f(x)=f(x0)+[(f(x1)-f(x0))/(x1-x0)]*(x-x0)
+//' @description This function carries out linear interpolation, reproducing a subset of the behaviour of stats::approx in R.
 //'
-//' x is assumed to be sorted; if sorted in descending order, the order of elements in x and y is reversed. If a value of xout lies outside the range [min(x), max(x)], the value is interpolated using the nearest extremum (this corresponds to the behaviour of stats::approx with method=2).
+//' @details Linear interpolation is performed with f(x)=f(x0)+[(f(x1)-f(x0))/(x1-x0)]*(x-x0). x is assumed to be sorted; if sorted in descending order, the order of elements in x and y is reversed. If a value of xout lies outside the range [min(x), max(x)], the value is interpolated using the nearest extremum (this corresponds to the behaviour of stats::approx with method=2).
 //'
 //' @param x NumericVector of x coordinates of points to be interpolated
 //' @param y NumericVector of y coordinates of points to be interpolated
@@ -86,7 +86,9 @@ NumericVector approx_cpp(NumericVector x, NumericVector y, NumericVector xout) {
 
 }
 
-//' Returns coordinates of L-regions for cFDR method. Drop-in replacement for the cfdr::vl function in the use case wherein indices and fold are supplied and mode=2.
+//' @title Returns coordinates of L-regions for cFDR method.
+//'
+//' @description Drop-in replacement for the cfdr::vl function in the use case wherein indices and fold are supplied and mode=2.
 //' 
 //' @param p principal p-values
 //' @param q conditional p-values
@@ -99,12 +101,11 @@ NumericVector approx_cpp(NumericVector x, NumericVector y, NumericVector xout) {
 //' @param nv resolution for constructing L-curves, default 1000
 //' @param scale return curves on the p- or z- plane. Y values are equally spaced on the z-plane.
 //' @param closed determines whether curves are closed polygons encircling regions L (closed=T), or lines indicating the rightmost border of regions L
-//' @param verbose print progress 
 //' @return list containing elements x, y. Assuming n curves are calculated (where n=length(indices) or length(at)) and closed=T, x is a matrix of dimension n x (4+nv), y ix a vector of length (4+nv).
 //' 
 //' @author Tom Willis
 // [[Rcpp::export]]
-List vl_mode2(NumericVector p, NumericVector q, IntegerVector indices, IntegerVector fold,  bool adj=true, Nullable<NumericVector> at=R_NilValue, int nt=5000, int nv=1000, double p_threshold=0, CharacterVector scale=CharacterVector::create("p", "z"), bool closed=true, bool verbose=false, double gx=0.00001) {
+List vl_mode2(NumericVector p, NumericVector q, IntegerVector indices, IntegerVector fold,  bool adj=true, Nullable<NumericVector> at=R_NilValue, int nt=5000, int nv=1000, double p_threshold=0, CharacterVector scale=CharacterVector::create("p", "z"), bool closed=true, double gx=0.00001) {
 
   NumericVector zp = -qnorm(p/2);
 
