@@ -1,8 +1,3 @@
-library(cfdr)
-library(Rcpp)
-library(testthat)
-library(microbenchmark)
-
 set.seed(1)
 
 n=10000; n1p=100; n1pq=100; n1q=100

@@ -1,7 +1,3 @@
-library(testthat)
-library(Rcpp)
-library(microbenchmark)
-
 set.seed(42)
 
 test_that("Test ecdf_cpp on some trivial cases", {

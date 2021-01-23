@@ -1140,17 +1140,12 @@ fit.2g.parallel=function(P, pars = c(0.5, 1.5), weights = rep(1, min(length(Z),d
   }
 
   cl<-parallel::makeCluster(ncores, type="FORK")
-  parallel::setDefaultCluster(cl=cl)
-  zx = optimParallel::optimParallel(pars, function(p) l2(p), lower = c(1e-05, sigma_range[1]), 
-    upper = c(1 - (1e-05), sigma_range[2]), method = "L-BFGS-B", control = list(factr = 10), 
-    ...)
-  parallel::setDefaultCluster(cl=NULL)
+
+  zx = optimParallel::optimParallel(pars, function(p) l2(p), lower = c(1e-05, sigma_range[1]), upper = c(1 - (1e-05), sigma_range[2]), method = "L-BFGS-B", control =list(factr = 10), parallel=list(cl=cl, forward=F, loginfo=F), ...)
+
   parallel::stopCluster(cl)
-  h1 = -zx$value
-  h0 = -l2()
-  yy = list(pars = zx$par, h1value = h1, h0value = h0, lr = h1 - 
-      h0)
-  return(yy)
+
+  return(list(pars = zx$par, h1value = zx$h1value, h0value = zx$h0value, lr = zx$h1value -  zx$h0value))
 }
 
 #' Fit a four-part mixture normal model to bivariate data. Assumes that data are distributed as one of
