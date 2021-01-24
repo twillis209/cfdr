@@ -1,6 +1,6 @@
 set.seed(42)
 
-n=1e6; n1p=10000; n1pq=10000; n1q=10000
+n=1e3; n1p=1e2; n1pq=1e2; n1q=1e2
 
 zp=c(rnorm(n1p,sd=3), rnorm(n1q,sd=1), rnorm(n1pq,sd=3), rnorm(n-n1p-n1q-n1pq,sd=1))
 

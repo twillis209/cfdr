@@ -26,6 +26,8 @@ fit.2g.parallel(
 \item{rho}{correlation between P and Q if bivariate observations are specified}
 
 \item{ncores}{number of cores on which to run parallel optimisation procedure}
+
+\item{...}{arguments passed to optimParallel call}
 }
 \value{
 a list containing parameters pars, likelihoods under h1 (Z distributed as above), likelihood under h0 (Z~N(0,1)) and likelihood ratio lr.

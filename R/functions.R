@@ -1024,6 +1024,7 @@ il=function(X,Y=NULL,pi0_null=NULL,sigma_null=rep(1,length(pi0_null)),rho_null=0
 #' @param weights optional weights for parameters
 #' @param sigma_range range of possible values for sigma (closed interval). Default [1,100]
 #' @param rho correlation between P and Q if bivariate observations are specified
+#' @param ... arguments passed to optim call
 #' @return a list containing parameters pars, likelihoods under h1 (Z distributed as above), likelihood under h0 (Z~N(0,1)) and likelihood ratio lr.
 #' @importFrom stats qnorm dnorm
 #' @export
@@ -1036,7 +1037,7 @@ il=function(X,Y=NULL,pi0_null=NULL,sigma_null=rep(1,length(pi0_null)),rho_null=0
 #' fit=fit.2g(Z)
 #' fit$pars
 fit.2g=function(P, pars = c(0.5, 1.5), weights = rep(1, min(length(Z),dim(Z)[1])), 
-  sigma_range = c(1,100),rho=0,...) {
+  sigma_range = c(1,100),rho=0, ...) {
   if (all(P<=1) & all(P>= 0)) Z=-qnorm(P/2) else Z=P # P-values or Z scores
   
   pars = as.numeric(pars)
@@ -1096,13 +1097,14 @@ fit.2g=function(P, pars = c(0.5, 1.5), weights = rep(1, min(length(Z),dim(Z)[1])
 #' @param sigma_range range of possible values for sigma (closed interval). Default [1,100]
 #' @param rho correlation between P and Q if bivariate observations are specified
 #' @param ncores number of cores on which to run parallel optimisation procedure
+#' @param ... arguments passed to optimParallel call
 #' @return a list containing parameters pars, likelihoods under h1 (Z distributed as above), likelihood under h0 (Z~N(0,1)) and likelihood ratio lr.
 #' @importFrom mnormt dmnorm
 #' @importFrom stats qnorm dnorm
 #' @export
-#' @author James Liley
+#' @author Tom Willis  
 fit.2g.parallel=function(P, pars = c(0.5, 1.5), weights = rep(1, min(length(Z),dim(Z)[1])), 
-  sigma_range = c(1,100),rho=0,ncores=1,...) {
+  sigma_range = c(1,100),rho=0,ncores=1, ...) {
   if (all(P<=1) & all(P>= 0)) Z=-qnorm(P/2) else Z=P # P-values or Z scores
   
   pars = as.numeric(pars)
