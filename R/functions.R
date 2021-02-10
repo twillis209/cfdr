@@ -1037,7 +1037,7 @@ il=function(X,Y=NULL,pi0_null=NULL,sigma_null=rep(1,length(pi0_null)),rho_null=0
 #' fit=fit.2g(Z)
 #' fit$pars
 fit.2g=function(P, pars = c(0.5, 1.5), weights = rep(1, min(length(Z),dim(Z)[1])), 
-  sigma_range = c(1,100),rho=0, ...) {
+                sigma_range = c(1,100),rho=0, ...) {
   if (all(P<=1) & all(P>= 0)) Z=-qnorm(P/2) else Z=P # P-values or Z scores
   
   pars = as.numeric(pars)
@@ -1047,14 +1047,18 @@ fit.2g=function(P, pars = c(0.5, 1.5), weights = rep(1, min(length(Z),dim(Z)[1])
   if (pars[1] >= 1 | pars[1] <= 0 | pars[2] <= sigma_range[1]) 
     stop("Initial value of pi0 must all be between 0 and 1 and initial value of s must be greater than 0 (or sigma_range[1] if set)")
   if (abs(rho)< 0.001) {
-    if (length(dim(Z))>1) Z=Z[,2]
+    if (length(dim(Z))>1) {
+      Z=Z[,2]
+    } 
     w = which(!is.na(Z * weights))
     Z = Z[w]
     weights = weights[w]
     w1=which(abs(Z)<30); w2=setdiff(1:length(Z),w1)
-    l2 = function(pars = c(0.5, 1.5)) -(sum(weights[w1] * log(pars[1] * 
+    l2 = function(pars = c(0.5, 1.5)) {
+      -(sum(weights[w1] * log(pars[1] *
         dnorm(Z[w1], sd = 1) + (1 - pars[1]) * dnorm(Z[w1], sd = pars[2])))) +
-      -(sum(weights[w2] * (log(1 - pars[1]) + dnorm(Z[w2], sd = pars[2],log=T)))) 
+        -(sum(weights[w2] * (log(1 - pars[1]) + dnorm(Z[w2], sd = pars[2],log=T))))
+    }
   } else {
     w1=which(abs(Z[,2])<30); w2=setdiff(1:dim(Z)[1],w1)
     w = which(!is.na(Z[,1]*Z[,2] * weights))
@@ -1066,20 +1070,26 @@ fit.2g=function(P, pars = c(0.5, 1.5), weights = rep(1, min(length(Z),dim(Z)[1])
       v2=rbind(c(1,rho),c(rho,pars[2]^2))
       v2r=rbind(c(1,-rho),c(-rho,pars[2]^2))
       pi0=pars[1]
-      fw1= pi0*mnormt::dmnorm(Z[w1,],varcov=v1) + (1-pi0)*mnormt::dmnorm(Z[w1,],varcov=v2) 
+      # 
+      fw1= pi0*mnormt::dmnorm(Z[w1,],varcov=v1) + (1-pi0)*mnormt::dmnorm(Z[w1,],varcov=v2)
+      #
       fw2= sum(weights[w2]*(log(1-pi0) + mnormt::dmnorm(Z[w2,],varcov=v2,log=T) ))
-      fw1r= pi0*mnormt::dmnorm(Z[w1,],varcov=v1r) + (1-pi0)*mnormt::dmnorm(Z[w1,],varcov=v2r)  
+      #
+      fw1r= pi0*mnormt::dmnorm(Z[w1,],varcov=v1r) + (1-pi0)*mnormt::dmnorm(Z[w1,],varcov=v2r)
+      #
       fw2r= sum(weights[w2]*(log(1-pi0) + mnormt::dmnorm(Z[w2,],varcov=v2r,log=T) ))
+
       -sum(weights[w1]*log(fw1+fw1r)) - (fw2+ fw2r)
     }
   }
+
   zx = stats::optim(pars, function(p) l2(p), lower = c(1e-05, sigma_range[1]), 
     upper = c(1 - (1e-05), sigma_range[2]), method = "L-BFGS-B", control = list(factr = 10), 
     ...)
+
   h1 = -zx$value
   h0 = -l2()
-  yy = list(pars = zx$par, h1value = h1, h0value = h0, lr = h1 - 
-      h0)
+  yy = list(pars = zx$par, h1value = h1, h0value = h0, lr = h1 - h0)
   return(yy)
 }
 
@@ -1143,11 +1153,17 @@ fit.2g.parallel=function(P, pars = c(0.5, 1.5), weights = rep(1, min(length(Z),d
 
   cl<-parallel::makeCluster(ncores, type="FORK")
 
-  zx = optimParallel::optimParallel(pars, function(p) l2(p), lower = c(1e-05, sigma_range[1]), upper = c(1 - (1e-05), sigma_range[2]), method = "L-BFGS-B", control =list(factr = 10), parallel=list(cl=cl, forward=F, loginfo=F), ...)
+  zx = optimParallel::optimParallel(pars, function(p) l2(p), lower = c(1e-05, sigma_range[1]), upper = c(1 - (1e-05), sigma_range[2]), method = "L-BFGS-B", control =list(factr = 10), parallel=list(cl=cl, forward=F, loginfo=T), ...)
 
   parallel::stopCluster(cl)
 
-  return(list(pars = zx$par, h1value = zx$h1value, h0value = zx$h0value, lr = zx$h1value -  zx$h0value))
+  h0value<- -l2()
+  h1value<- -l2(zx$par)
+  
+  return(list(pars = zx$par,
+              h1value = h1value,
+              h0value = h0value,
+              lr = h1value - h0value))
 }
 
 #' Fit a four-part mixture normal model to bivariate data. Assumes that data are distributed as one of
